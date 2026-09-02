@@ -142,6 +142,7 @@
   input[readonly]{background:var(--azul-claro);color:var(--texto-suave);}
   .campo-logradouro{position:relative;}
   .campo-logradouro .linha-input{display:flex;gap:6px;}
+  .campo-emissor{position:relative;}
   .btn{
     border:none;
     border-radius:6px;
@@ -426,9 +427,10 @@
       <h2>Dados de quem está emitindo</h2>
       <form id="formEmissorDeclaracao" autocomplete="off">
         <div class="grade">
-          <div class="campo col-2">
+          <div class="campo col-2 campo-emissor">
             <label for="emissorNome">Nome</label>
             <input type="text" id="emissorNome" autocomplete="off" required>
+            <div class="popup-sugestoes" id="popupSugestoesEmissor"></div>
           </div>
           <div class="campo col-1">
             <label for="emissorFuncao">Função</label>
@@ -1525,6 +1527,10 @@
     const ok = await DB.criarDeclaracao(dados);
     if(!ok) return;
 
+    salvarEmissorRecente({
+      nome: dados.emissorNome, funcao: dados.emissorFuncao, cpf: dados.emissorCpf
+    });
+
     await renderizarDeclaracoes(1);
     await imprimirDeclaracao(dados);
 
@@ -1535,6 +1541,76 @@
   $('#btnLimparDeclaracao').addEventListener('click', ()=>{
     $('#formDeclaracao').reset();
     logradouroSelecionado = null;
+  });
+
+  /* =====================  Emissor: lembrado no navegador  =====================
+     Guarda no localStorage os emissores já usados neste computador/navegador,
+     preenche o formulário automaticamente com o último usado e sugere os
+     nomes já cadastrados enquanto o usuário digita. */
+  const CHAVE_EMISSORES = 'declaracao_emissores_v1';
+
+  function obterEmissoresSalvos(){
+    try{
+      const lista = JSON.parse(localStorage.getItem(CHAVE_EMISSORES));
+      return Array.isArray(lista) ? lista : [];
+    }catch(e){ return []; }
+  }
+
+  function salvarEmissorRecente(emissor){
+    if(!emissor.nome) return;
+    let lista = obterEmissoresSalvos();
+    lista = lista.filter(e=> apenasDigitos(e.cpf) !== apenasDigitos(emissor.cpf) || !emissor.cpf);
+    lista.unshift(emissor);
+    lista = lista.slice(0, 20);
+    try{ localStorage.setItem(CHAVE_EMISSORES, JSON.stringify(lista)); }catch(e){ /* localStorage indisponível */ }
+  }
+
+  function preencherUltimoEmissor(){
+    const lista = obterEmissoresSalvos();
+    if(lista.length === 0) return;
+    const ultimo = lista[0];
+    $('#emissorNome').value = ultimo.nome || '';
+    $('#emissorFuncao').value = ultimo.funcao || '';
+    $('#emissorCpf').value = ultimo.cpf || '';
+  }
+
+  function renderizarSugestoesEmissor(filtro){
+    const cont = $('#popupSugestoesEmissor');
+    const termo = (filtro || '').trim().toLowerCase();
+    if(termo.length === 0){
+      cont.classList.remove('aberta');
+      cont.innerHTML = '';
+      return;
+    }
+    const lista = obterEmissoresSalvos().filter(e=> (e.nome||'').toLowerCase().includes(termo)).slice(0, 6);
+    if(lista.length === 0){
+      cont.classList.remove('aberta');
+      cont.innerHTML = '';
+      return;
+    }
+    cont.innerHTML = lista.map((e,i)=> `
+      <div class="item-sugestao" data-i="${i}">
+        <strong>${e.nome}</strong>
+        <small>${e.funcao || '—'}${e.cpf ? ' · CPF '+e.cpf : ''}</small>
+      </div>
+    `).join('');
+    cont.classList.add('aberta');
+    $$('.item-sugestao', cont).forEach(it=>{
+      it.addEventListener('mousedown', ev=>{
+        ev.preventDefault(); // evita que o blur feche o popup antes do clique registrar
+        const escolhido = lista[Number(it.dataset.i)];
+        $('#emissorNome').value = escolhido.nome || '';
+        $('#emissorFuncao').value = escolhido.funcao || '';
+        $('#emissorCpf').value = escolhido.cpf || '';
+        cont.classList.remove('aberta');
+      });
+    });
+  }
+
+  $('#emissorNome').addEventListener('input', e=> renderizarSugestoesEmissor(e.target.value));
+  $('#emissorNome').addEventListener('focus', e=> renderizarSugestoesEmissor(e.target.value));
+  $('#emissorNome').addEventListener('blur', ()=>{
+    setTimeout(()=> $('#popupSugestoesEmissor').classList.remove('aberta'), 150);
   });
 
   /* Um cidadão está sempre vinculado ao seu CPF e ao ACS que o acompanha:
@@ -2001,6 +2077,7 @@
   await renderizarReceitas(1);
   renderizarSelectAcsReceita();
   $('#rcData').value = new Date().toISOString().slice(0,10);
+  preencherUltimoEmissor();
 
 })();
 </script>
