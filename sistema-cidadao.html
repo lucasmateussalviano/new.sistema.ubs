@@ -131,6 +131,8 @@
   .btn-secundario{background:var(--azul-claro);color:var(--azul-sus-escuro);}
   .btn-secundario:hover{background:var(--azul-borda);}
   .btn-texto{background:none;color:var(--azul-sus);padding:6px 8px;text-decoration:underline;font-weight:600;}
+  .btn-icone{padding:8px;display:inline-flex;align-items:center;justify-content:center;}
+  .btn-icone svg{width:17px;height:17px;}
   .btn-perigo{background:#FBE9E7;color:var(--vermelho);}
   .acoes-form{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
   table{width:100%;border-collapse:collapse;font-size:13.5px;}
@@ -287,6 +289,9 @@
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span style="font-size:12.5px;color:var(--texto-suave);">Usuário: <strong id="nomeUsuarioLogado" style="color:var(--azul-sus-escuro);">—</strong></span>
+    <button type="button" class="btn btn-secundario btn-icone" id="btnAtalhoConfiguracoes" title="Configurações" aria-label="Configurações">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
     <button type="button" class="btn btn-secundario" id="btnSair">Sair</button>
   </div>
 </header>
@@ -919,14 +924,18 @@
   };
 
   /* =====================  Abas  ===================== */
+  function irParaAba(nomeAba){
+    $$('.aba-botao').forEach(b=> b.classList.toggle('ativa', b.dataset.aba === nomeAba));
+    $$('.aba').forEach(a=> a.classList.remove('ativa'));
+    $('#aba-'+nomeAba).classList.add('ativa');
+  }
   $$('.aba-botao').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.aba-botao').forEach(b=>b.classList.remove('ativa'));
-      $$('.aba').forEach(a=>a.classList.remove('ativa'));
-      btn.classList.add('ativa');
-      $('#aba-'+btn.dataset.aba).classList.add('ativa');
-    });
+    btn.addEventListener('click', ()=> irParaAba(btn.dataset.aba));
   });
+  const btnAtalhoConfiguracoes = $('#btnAtalhoConfiguracoes');
+  if(btnAtalhoConfiguracoes){
+    btnAtalhoConfiguracoes.addEventListener('click', ()=> irParaAba('configuracoes'));
+  }
 
   /* =====================  Modais  ===================== */
   function abrirModal(id){ $('#'+id).classList.add('aberta'); }
