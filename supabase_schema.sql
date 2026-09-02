@@ -62,8 +62,17 @@ create table if not exists public.declaracoes (
   area          text,
   microarea     text,
   logradouro_id text,
-  data          timestamptz not null default now()
+  data          timestamptz not null default now(),
+  emissor_nome    text,
+  emissor_funcao  text,
+  emissor_cpf     text
 );
+
+-- Caso a tabela 'declaracoes' já exista em um banco publicado anteriormente,
+-- rode também o alter abaixo para adicionar os campos do emissor:
+alter table public.declaracoes add column if not exists emissor_nome text;
+alter table public.declaracoes add column if not exists emissor_funcao text;
+alter table public.declaracoes add column if not exists emissor_cpf text;
 
 -- ---------- Catálogo de medicamentos (autocompletar) ----------
 create table if not exists public.medicamentos (

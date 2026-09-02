@@ -243,6 +243,7 @@
   .item-agente strong{font-size:13.5px;display:block;}
   .item-agente span{font-size:12px;color:var(--texto-suave);}
   .form-cadastro-agente{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;}
+  #buscaCidadaoConfig{margin-top:4px;margin-bottom:4px;}
   @media (max-width:720px){
     .form-cadastro-agente{grid-template-columns:1fr;}
   }
@@ -341,9 +342,10 @@
           <div class="campo col-2 campo-logradouro">
             <label for="declLogradouro">Logradouro</label>
             <div class="linha-input">
-              <input type="text" id="declLogradouro" placeholder="Selecione um endereço cadastrado" readonly required>
-              <button type="button" class="btn btn-secundario" id="btnAbrirLogradouros">Buscar</button>
+              <input type="text" id="declLogradouro" placeholder="Digite para buscar um endereço cadastrado" autocomplete="off" required>
+              <button type="button" class="btn btn-secundario" id="btnAbrirCadastroLogradouro">+ Novo</button>
             </div>
+            <div class="popup-sugestoes" id="popupSugestoesLogradouro"></div>
           </div>
           <div class="campo col-1">
             <label for="declNumero">Número</label>
@@ -392,6 +394,28 @@
 
         <div class="acoes-form">
           <button type="button" class="btn btn-secundario" id="btnLimparDeclaracao">Limpar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="cartao">
+      <h2>Dados de quem está emitindo</h2>
+      <form id="formEmissorDeclaracao" autocomplete="off">
+        <div class="grade">
+          <div class="campo col-2">
+            <label for="emissorNome">Nome</label>
+            <input type="text" id="emissorNome" autocomplete="off" required>
+          </div>
+          <div class="campo col-1">
+            <label for="emissorFuncao">Função</label>
+            <input type="text" id="emissorFuncao" autocomplete="off" required>
+          </div>
+          <div class="campo col-1">
+            <label for="emissorCpf">CPF</label>
+            <input type="text" id="emissorCpf" maxlength="14" placeholder="000.000.000-00" required>
+          </div>
+        </div>
+        <div class="acoes-form">
           <button type="submit" class="btn btn-primario">Emitir e imprimir</button>
         </div>
       </form>
@@ -568,29 +592,54 @@
       <p class="aviso">Os ACS cadastrados aqui ficam disponíveis para seleção ao cadastrar um logradouro na Declaração de Residência.</p>
     </div>
 
+    <div class="cartao">
+      <h2>Endereços cadastrados</h2>
+      <form id="formEndereco" autocomplete="off">
+        <div class="form-cadastro-logradouro">
+          <div class="campo campo-full">
+            <label for="enderecoLogradouro">Logradouro</label>
+            <input type="text" id="enderecoLogradouro" placeholder="Ex.: Rua Severina Gomes de Morais" required>
+          </div>
+          <div class="campo">
+            <label for="enderecoBairro">Bairro</label>
+            <input type="text" id="enderecoBairro" required>
+          </div>
+          <div class="campo">
+            <label for="enderecoCep">CEP</label>
+            <input type="text" id="enderecoCep" maxlength="9" placeholder="00000-000" required>
+          </div>
+          <div class="campo campo-full">
+            <label for="enderecoAcsSelect">Agente Comunitário de Saúde</label>
+            <select id="enderecoAcsSelect" required>
+              <option value="">Selecione um ACS cadastrado</option>
+            </select>
+          </div>
+        </div>
+        <div class="info-cidade-uf">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Cidade <strong>SANTA RITA</strong> · UF <strong>PB</strong> — preenchido automaticamente para todos os cadastros
+        </div>
+        <div class="acoes-form">
+          <button type="button" class="btn btn-secundario" id="btnCancelarEdicaoEndereco" style="display:none;">Cancelar</button>
+          <button type="submit" class="btn btn-primario" id="btnSalvarEndereco">Adicionar endereço</button>
+        </div>
+      </form>
+      <div class="lista-agentes" id="listaEnderecos"></div>
+      <p class="aviso">Nenhum ACS na lista? Cadastre-o antes no bloco acima. Os endereços cadastrados aqui ficam disponíveis para seleção ao emitir uma Declaração de Residência.</p>
+    </div>
+
+    <div class="cartao">
+      <h2>Cidadãos cadastrados</h2>
+      <input type="text" id="buscaCidadaoConfig" placeholder="Buscar por nome ou CPF...">
+      <div id="tabelaCidadaosConfig"></div>
+      <div class="paginacao" id="paginacaoCidadaosConfig"></div>
+    </div>
+
   </section>
 
 </main>
 
 <footer class="rodape">Desenvolvido por Lucas Mateus Salviano</footer>
-
-<!-- Modal: selecionar logradouro cadastrado -->
-<div class="sobreposicao" id="modalSelecionarLogradouro">
-  <div class="modal">
-    <div class="modal-cabecalho">
-      <h3>Endereços cadastrados</h3>
-      <button class="modal-fechar" data-fechar="modalSelecionarLogradouro">✕</button>
-    </div>
-    <div class="modal-corpo">
-      <input type="text" id="buscaLogradouro" placeholder="Buscar por logradouro ou bairro...">
-      <div class="lista-logradouros" id="listaLogradouros"></div>
-    </div>
-    <div class="modal-rodape" style="align-items:center;">
-      <span style="font-size:12.5px;color:var(--texto-suave);">Não encontrou o endereço?</span>
-      <button type="button" class="btn btn-primario" id="btnAbrirCadastroLogradouro">+ Cadastrar novo logradouro</button>
-    </div>
-  </div>
-</div>
 
 <!-- Modal: cadastrar/gerenciar logradouro -->
 <div class="sobreposicao" id="modalCadastroLogradouro">
@@ -759,7 +808,9 @@
       logradouro: row.logradouro, numero: row.numero, complemento: row.complemento,
       bairro: row.bairro, cidade: row.cidade, uf: row.uf, estado: row.estado, cep: row.cep,
       acs: row.acs, area: row.area, microarea: row.microarea, logradouroId: row.logradouro_id,
-      data: row.data
+      data: row.data,
+      emissorNome: row.emissor_nome || '', emissorFuncao: row.emissor_funcao || '',
+      emissorCpf: formatarCPF(row.emissor_cpf || '')
     };
   }
   function linhaParaRenovacao(row){
@@ -816,6 +867,28 @@
       cacheLogradouros.push(l);
       return l;
     },
+    async atualizarLogradouro(l){
+      const { error } = await supabase.from('logradouros').update({
+        logradouro:l.logradouro, bairro:l.bairro, cep:l.cep, acs_id:l.acsId
+      }).eq('id', l.id);
+      if(error){ alert('Erro ao atualizar endereço: '+error.message); return false; }
+      const idx = cacheLogradouros.findIndex(x=> x.id === l.id);
+      if(idx !== -1) cacheLogradouros[idx] = l;
+      return true;
+    },
+    async removerLogradouro(id){
+      const { error } = await supabase.from('logradouros').delete().eq('id', id);
+      if(error){
+        if(error.code === '23503'){
+          alert('Não é possível remover: este endereço já está vinculado a um ou mais cidadãos cadastrados.');
+        } else {
+          alert('Erro ao remover endereço: '+error.message);
+        }
+        return false;
+      }
+      cacheLogradouros = cacheLogradouros.filter(l=> l.id !== id);
+      return true;
+    },
 
     /* ---- Medicamentos ---- */
     getMedicamentos(){ return cacheMedicamentos; },
@@ -838,6 +911,19 @@
     },
     async buscarCidadaosPorNome(termo, limite){
       const { data, error } = await supabase.from('cidadaos').select('*').ilike('nome', '%'+termo+'%').order('nome').limit(limite || 8);
+      if(error){ console.error(error); return []; }
+      return data.map(linhaParaCidadao);
+    },
+    async buscarCidadaos(termo){
+      let consulta = supabase.from('cidadaos').select('*').order('nome').limit(300);
+      const t = (termo || '').trim();
+      if(t){
+        const digitos = apenasDigitos(t);
+        consulta = digitos.length >= 3
+          ? consulta.or(`cpf.ilike.%${digitos}%,nome.ilike.%${t}%`)
+          : consulta.ilike('nome', '%'+t+'%');
+      }
+      const { data, error } = await consulta;
       if(error){ console.error(error); return []; }
       return data.map(linhaParaCidadao);
     },
@@ -875,7 +961,9 @@
         id: d.id, nome: d.nome, cpf: apenasDigitos(d.cpf), logradouro: d.logradouro, numero: d.numero,
         complemento: d.complemento, bairro: d.bairro, cidade: d.cidade, uf: d.uf, estado: d.estado,
         cep: d.cep, acs: d.acs, area: d.area, microarea: d.microarea, logradouro_id: d.logradouroId,
-        data: d.data
+        data: d.data,
+        emissor_nome: d.emissorNome || null, emissor_funcao: d.emissorFuncao || null,
+        emissor_cpf: d.emissorCpf ? apenasDigitos(d.emissorCpf) : null
       };
       const { error } = await supabase.from('declaracoes').insert(payload);
       if(error){ alert('Erro ao registrar declaração: '+error.message); return false; }
@@ -957,8 +1045,10 @@
 
   /* =====================  CPF/CEP: máscara automática  ===================== */
   $('#declCpf').addEventListener('input', e=> e.target.value = formatarCPF(e.target.value));
+  $('#emissorCpf').addEventListener('input', e=> e.target.value = formatarCPF(e.target.value));
   $('#rcCpf').addEventListener('input', e=> e.target.value = formatarCPF(e.target.value));
   $('#novoCep').addEventListener('input', e=> e.target.value = formatarCEP(e.target.value));
+  $('#enderecoCep').addEventListener('input', e=> e.target.value = formatarCEP(e.target.value));
 
   /* =====================  Campos travados: Cidade sempre SANTA RITA, UF sempre PB  ===================== */
   const CIDADE_PADRAO = 'SANTA RITA';
@@ -1015,6 +1105,8 @@
         renderizarAgentes();
         renderizarSelectAgentes();
         renderizarSelectAcsReceita();
+        renderizarSelectAcsEndereco();
+        renderizarEnderecos();
       });
     });
   }
@@ -1051,38 +1143,153 @@
     renderizarAgentes();
     renderizarSelectAgentes();
     renderizarSelectAcsReceita();
+    renderizarSelectAcsEndereco();
+    renderizarEnderecos();
   });
 
-  /* =====================  Seleção de logradouro cadastrado  ===================== */
-  let logradouroSelecionado = null;
+  /* =====================  Endereços (Configurações)  ===================== */
+  function renderizarSelectAcsEndereco(){
+    const sel = $('#enderecoAcsSelect');
+    if(!sel) return;
+    const atual = sel.value;
+    const agentes = DB.getAgentes();
+    sel.innerHTML = '<option value="">Selecione um ACS cadastrado</option>' +
+      agentes.map(a=> `<option value="${a.id}">${a.nome} — Área ${a.area}, Microárea ${a.microarea}</option>`).join('');
+    if(agentes.some(a=>a.id === atual)) sel.value = atual;
+  }
 
-  function renderizarListaLogradouros(filtro){
-    const lista = DB.getLogradouros().filter(l=>{
-      if(!filtro) return true;
-      const alvo = (l.logradouro+' '+l.bairro).toLowerCase();
-      return alvo.includes(filtro.toLowerCase());
-    });
-    const cont = $('#listaLogradouros');
+  function renderizarEnderecos(){
+    const cont = $('#listaEnderecos');
+    const lista = DB.getLogradouros();
     if(lista.length === 0){
-      cont.innerHTML = '<div class="vazio">Nenhum logradouro cadastrado ainda. Use "Cadastrar novo logradouro" abaixo.</div>';
+      cont.innerHTML = '<div class="vazio">Nenhum endereço cadastrado ainda.</div>';
       return;
     }
     cont.innerHTML = lista.map(l=>{
       const agente = DB.getAgentes().find(a=> a.id === l.acsId);
       return `
-      <div class="item-logradouro" data-id="${l.id}">
-        <strong>${l.logradouro}</strong>
-        <span>${l.bairro} — ${l.cidade}/${l.uf} · CEP ${l.cep||'—'} · ACS: ${agente ? agente.nome : '—'}</span>
+      <div class="item-agente" data-id="${l.id}">
+        <div>
+          <strong>${l.logradouro}</strong>
+          <span>${l.bairro} — ${l.cidade}/${l.uf} · CEP ${l.cep||'—'} · ACS: ${agente ? agente.nome : '—'}</span>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button type="button" class="btn-texto" data-editar-endereco="${l.id}">Editar</button>
+          <button type="button" class="btn-texto" data-remover-endereco="${l.id}">Remover</button>
+        </div>
       </div>
     `;}).join('');
-    $$('.item-logradouro', cont).forEach(el=>{
-      el.addEventListener('click', ()=>{
-        const l = DB.getLogradouros().find(x=>x.id === el.dataset.id);
-        selecionarLogradouro(l);
-        fecharModal('modalSelecionarLogradouro');
+    $$('[data-editar-endereco]', cont).forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const l = DB.getLogradouros().find(x=> x.id === b.dataset.editarEndereco);
+        if(l) entrarModoEdicaoEndereco(l);
+      });
+    });
+    $$('[data-remover-endereco]', cont).forEach(b=>{
+      b.addEventListener('click', async ()=>{
+        if(!confirm('Remover este endereço cadastrado?')) return;
+        const ok = await DB.removerLogradouro(b.dataset.removerEndereco);
+        if(!ok) return;
+        if(enderecoEmEdicaoId === b.dataset.removerEndereco) sairModoEdicaoEndereco();
+        renderizarEnderecos();
       });
     });
   }
+
+  let enderecoEmEdicaoId = null;
+  function entrarModoEdicaoEndereco(l){
+    enderecoEmEdicaoId = l.id;
+    $('#enderecoLogradouro').value = l.logradouro;
+    $('#enderecoBairro').value = l.bairro;
+    $('#enderecoCep').value = l.cep || '';
+    renderizarSelectAcsEndereco();
+    $('#enderecoAcsSelect').value = l.acsId || '';
+    $('#btnSalvarEndereco').textContent = 'Salvar edição';
+    $('#btnCancelarEdicaoEndereco').style.display = '';
+    $('#enderecoLogradouro').focus();
+  }
+  function sairModoEdicaoEndereco(){
+    enderecoEmEdicaoId = null;
+    $('#formEndereco').reset();
+    $('#btnSalvarEndereco').textContent = 'Adicionar endereço';
+    $('#btnCancelarEdicaoEndereco').style.display = 'none';
+  }
+  $('#btnCancelarEdicaoEndereco').addEventListener('click', ()=> sairModoEdicaoEndereco());
+
+  $('#formEndereco').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(!$('#enderecoAcsSelect').value){
+      alert('Selecione um ACS cadastrado. Se ainda não houver nenhum, cadastre um no bloco acima.');
+      return;
+    }
+    const dados = {
+      id: enderecoEmEdicaoId || gerarId(),
+      logradouro: $('#enderecoLogradouro').value.trim(),
+      bairro: $('#enderecoBairro').value.trim(),
+      cep: $('#enderecoCep').value.trim(),
+      cidade: CIDADE_PADRAO,
+      uf: UF_PADRAO,
+      estado: ESTADO_PADRAO,
+      acsId: $('#enderecoAcsSelect').value
+    };
+    const ok = enderecoEmEdicaoId ? await DB.atualizarLogradouro(dados) : await DB.criarLogradouro(dados);
+    if(!ok) return;
+    sairModoEdicaoEndereco();
+    renderizarEnderecos();
+  });
+
+  /* =====================  Cidadãos cadastrados (Configurações)  ===================== */
+  let paginaCidadaosConfig = 1;
+  let itensCidadaosConfig = [];
+  let temporizadorBuscaCidadaoConfig = null;
+
+  async function buscarERenderizarCidadaosConfig(termo){
+    itensCidadaosConfig = await DB.buscarCidadaos(termo);
+    renderizarCidadaosConfig(1);
+  }
+
+  function renderizarCidadaosConfig(pagina){
+    paginaCidadaosConfig = pagina;
+    const porPagina = 10;
+    const inicio = (pagina-1)*porPagina;
+    const pageItens = itensCidadaosConfig.slice(inicio, inicio+porPagina);
+    const cont = $('#tabelaCidadaosConfig');
+
+    if(itensCidadaosConfig.length === 0){
+      cont.innerHTML = '<div class="vazio">Nenhum cidadão encontrado.</div>';
+      $('#paginacaoCidadaosConfig').innerHTML = '';
+      return;
+    }
+
+    cont.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Nome</th><th>CPF</th><th>Endereço</th><th>ACS</th><th>Área/Microárea</th>
+        </tr></thead>
+        <tbody>
+          ${pageItens.map(c=>`
+            <tr>
+              <td>${c.nome}</td>
+              <td>${c.cpf}</td>
+              <td>${c.logradouro ? c.logradouro+', '+(c.numero||'S/N')+(c.complemento?' - '+c.complemento:'')+' — '+c.bairro+', '+c.cidade+'/'+c.uf : '—'}</td>
+              <td>${c.acs || '—'}</td>
+              <td>${c.area || '—'} / ${c.microarea || '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    paginar($('#paginacaoCidadaosConfig'), itensCidadaosConfig.length, pagina, porPagina, renderizarCidadaosConfig);
+  }
+
+  $('#buscaCidadaoConfig').addEventListener('input', e=>{
+    const termo = e.target.value;
+    clearTimeout(temporizadorBuscaCidadaoConfig);
+    temporizadorBuscaCidadaoConfig = setTimeout(()=> buscarERenderizarCidadaosConfig(termo), 300);
+  });
+
+  /* =====================  Seleção de logradouro cadastrado  ===================== */
+  let logradouroSelecionado = null;
 
   function selecionarLogradouro(l){
     logradouroSelecionado = l;
@@ -1096,17 +1303,70 @@
     $('#declAcs').value = agente ? agente.nome : '';
     $('#declArea').value = agente ? agente.area : '';
     $('#declMicroarea').value = agente ? agente.microarea : '';
+    $('#popupSugestoesLogradouro').classList.remove('aberta');
   }
 
-  $('#btnAbrirLogradouros').addEventListener('click', ()=>{
-    $('#buscaLogradouro').value = '';
-    renderizarListaLogradouros('');
-    abrirModal('modalSelecionarLogradouro');
+  function limparEnderecoDependente(){
+    $('#declBairro').value = '';
+    $('#declCidade').value = '';
+    $('#declCep').value = '';
+    $('#declUf').value = '';
+    $('#declEstado').value = '';
+    $('#declAcs').value = '';
+    $('#declArea').value = '';
+    $('#declMicroarea').value = '';
+  }
+
+  /* Autocomplete de endereços cadastrados — busca direto na lista em cache,
+     sem abrir modal. */
+  function renderizarSugestoesLogradouro(filtro){
+    const cont = $('#popupSugestoesLogradouro');
+    const termo = (filtro || '').trim().toLowerCase();
+    if(termo.length < 2){
+      cont.classList.remove('aberta');
+      cont.innerHTML = '';
+      return;
+    }
+    const lista = DB.getLogradouros().filter(l=>{
+      const alvo = (l.logradouro+' '+l.bairro).toLowerCase();
+      return alvo.includes(termo);
+    }).slice(0, 8);
+    if(lista.length === 0){
+      cont.innerHTML = '<div class="item-sugestao" style="cursor:default;">Nenhum endereço encontrado. Use "+ Novo" para cadastrar.</div>';
+      cont.classList.add('aberta');
+      return;
+    }
+    cont.innerHTML = lista.map(l=>{
+      const agente = DB.getAgentes().find(a=> a.id === l.acsId);
+      return `
+      <div class="item-sugestao" data-id="${l.id}">
+        <strong>${l.logradouro}</strong>
+        <small>${l.bairro} — ${l.cidade}/${l.uf} · CEP ${l.cep||'—'} · ACS: ${agente ? agente.nome : '—'}</small>
+      </div>
+    `;}).join('');
+    cont.classList.add('aberta');
+    $$('.item-sugestao[data-id]', cont).forEach(it=>{
+      it.addEventListener('mousedown', e=>{
+        e.preventDefault(); // evita que o blur feche o popup antes do clique registrar
+        const l = DB.getLogradouros().find(x=> x.id === it.dataset.id);
+        if(l) selecionarLogradouro(l);
+      });
+    });
+  }
+
+  $('#declLogradouro').addEventListener('input', e=>{
+    if(logradouroSelecionado && e.target.value !== logradouroSelecionado.logradouro){
+      logradouroSelecionado = null;
+      limparEnderecoDependente();
+    }
+    renderizarSugestoesLogradouro(e.target.value);
   });
-  $('#buscaLogradouro').addEventListener('input', e=> renderizarListaLogradouros(e.target.value));
+  $('#declLogradouro').addEventListener('focus', e=> renderizarSugestoesLogradouro(e.target.value));
+  $('#declLogradouro').addEventListener('blur', ()=>{
+    setTimeout(()=> $('#popupSugestoesLogradouro').classList.remove('aberta'), 150);
+  });
 
   $('#btnAbrirCadastroLogradouro').addEventListener('click', ()=>{
-    fecharModal('modalSelecionarLogradouro');
     $('#formCadastroLogradouro').reset();
     travarCidadeUf();
     renderizarSelectAgentes();
@@ -1133,6 +1393,7 @@
     if(!criado) return;
     fecharModal('modalCadastroLogradouro');
     selecionarLogradouro(criado);
+    renderizarEnderecos();
   });
 
   /* =====================  Emissão da declaração  ===================== */
@@ -1170,7 +1431,8 @@
       <p style="font-size:14px;margin-top:30px;">Santa Rita - PB, ${dataPorExtenso()}.</p>
       <div style="margin-top:60px;text-align:center;font-size:13px;">
         _________________________________________<br>
-        Agente Comunitário de Saúde — ${d.acs || ''}
+        ${d.emissorNome || ''}${d.emissorFuncao ? ' — '+d.emissorFuncao : ''}<br>
+        ${d.emissorCpf ? 'CPF '+d.emissorCpf : ''}
       </div>
       ${blocoResponsavel}
     `;
@@ -1181,8 +1443,9 @@
     window.print();
   }
 
-  $('#formDeclaracao').addEventListener('submit', async e=>{
+  $('#formEmissorDeclaracao').addEventListener('submit', async e=>{
     e.preventDefault();
+    if(!$('#formDeclaracao').reportValidity()) return;
     if(!logradouroSelecionado){
       alert('Selecione um logradouro cadastrado antes de emitir a declaração.');
       return;
@@ -1202,6 +1465,9 @@
       area: $('#declArea').value,
       microarea: $('#declMicroarea').value,
       logradouroId: logradouroSelecionado.id,
+      emissorNome: $('#emissorNome').value.trim(),
+      emissorFuncao: $('#emissorFuncao').value.trim(),
+      emissorCpf: $('#emissorCpf').value.trim(),
       data: new Date().toISOString(),
       id: gerarId()
     };
@@ -1222,12 +1488,14 @@
     logradouroSelecionado = null;
   });
 
-  /* Preenche o nome automaticamente se o CPF já existir na base */
+  /* Um cidadão está sempre vinculado ao seu CPF e ao ACS que o acompanha:
+     ao localizar o CPF já cadastrado, todo o cadastro (endereço, ACS, área
+     e microárea) é preenchido automaticamente — não apenas o nome. */
   $('#declCpf').addEventListener('blur', async ()=>{
     const cpfLimpo = apenasDigitos($('#declCpf').value);
     if(cpfLimpo.length < 11) return;
     const c = await DB.buscarCidadaoPorCpf(cpfLimpo);
-    if(c && !$('#declNome').value) $('#declNome').value = c.nome;
+    if(c) preencherCidadaoNoFormulario(c);
   });
 
   /* =====================  Popup de sugestão de nomes já com declaração emitida  ===================== */
@@ -1325,7 +1593,7 @@
     cont.innerHTML = `
       <table>
         <thead><tr>
-          <th>Data</th><th>Nome</th><th>CPF</th><th>Endereço</th><th>ACS</th><th></th>
+          <th>Data</th><th>Nome</th><th>CPF</th><th>Endereço</th><th>ACS</th><th>Emitido por</th><th></th>
         </tr></thead>
         <tbody>
           ${pageItens.map(d=>`
@@ -1335,6 +1603,7 @@
               <td>${d.cpf}</td>
               <td>${d.logradouro}, ${d.numero}${d.complemento?' - '+d.complemento:''} — ${d.bairro}, ${d.cidade}/${d.uf}</td>
               <td>${d.acs}</td>
+              <td>${d.emissorNome || '—'}${d.emissorFuncao ? ' ('+d.emissorFuncao+')' : ''}</td>
               <td><button class="btn-texto" data-reimprimir="${d.id}">Reimprimir</button></td>
             </tr>
           `).join('')}
@@ -1656,9 +1925,13 @@
   aplicarSanitizacao($('#cfgResponsavel'), false);
   aplicarSanitizacao($('#agenteNome'), false);
   aplicarSanitizacao($('#rcNome'), false);
+  aplicarSanitizacao($('#emissorNome'), false);
+  aplicarSanitizacao($('#emissorFuncao'), false);
   // Nome do logradouro, cidade, bairro e complemento: maiúsculo, sem acentos/especiais, números permitidos
   aplicarSanitizacao($('#novoLogradouro'), true);
   aplicarSanitizacao($('#novoBairro'), true);
+  aplicarSanitizacao($('#enderecoLogradouro'), true);
+  aplicarSanitizacao($('#enderecoBairro'), true);
   aplicarSanitizacao($('#cfgLogradouro'), true);
   aplicarSanitizacao($('#cfgCidade'), true);
   aplicarSanitizacao($('#cfgBairro'), true);
@@ -1673,6 +1946,9 @@
   await renderizarDeclaracoes(1);
   renderizarAgentes();
   renderizarSelectAgentes();
+  renderizarSelectAcsEndereco();
+  renderizarEnderecos();
+  await buscarERenderizarCidadaosConfig('');
   await renderizarReceitas(1);
   renderizarSelectAcsReceita();
   $('#rcData').value = new Date().toISOString().slice(0,10);
