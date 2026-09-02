@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Cadastro do Cidadão — UBS</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+  :root{
+    --azul-sus: #1451B4;
+    --azul-sus-escuro: #0B3B87;
+    --azul-claro: #EAF1FC;
+    --azul-borda: #CFE0F7;
+    --texto: #1C2733;
+    --texto-suave: #5B6B7C;
+    --branco: #FFFFFF;
+    --cinza-bg: #F7F9FC;
+    --verde: #1E8E3E;
+    --vermelho: #C5221F;
+    --sombra: 0 1px 3px rgba(20,81,180,0.08), 0 1px 2px rgba(20,81,180,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    background:var(--cinza-bg);
+    color:var(--texto);
+  }
+  header.topo{
+    background:var(--branco);
+    border-bottom:3px solid var(--azul-sus);
+    padding:14px 24px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .logo-sus{flex-shrink:0;height:40px;width:auto;display:block;}
+  header.topo h1{
+    font-size:18px;
+    margin:0;
+    color:var(--azul-sus-escuro);
+    font-weight:600;
+  }
+  header.topo p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:var(--texto-suave);
+  }
+  main{
+    max-width:1080px;
+    margin:24px auto 60px;
+    padding:0 20px;
+  }
+  nav.abas{
+    display:flex;
+    gap:6px;
+    border-bottom:1px solid var(--azul-borda);
+    margin-bottom:22px;
+  }
+  nav.abas button{
+    background:none;
+    border:none;
+    padding:12px 18px;
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--texto-suave);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    margin-bottom:-1px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  nav.abas button svg{flex-shrink:0;width:17px;height:17px;}
+  nav.abas button.ativa{
+    color:var(--azul-sus);
+    border-bottom-color:var(--azul-sus);
+  }
+  section.aba{display:none;}
+  section.aba.ativa{display:block;}
+  .cartao{
+    background:var(--branco);
+    border:1px solid var(--azul-borda);
+    border-radius:10px;
+    padding:22px 24px;
+    box-shadow:var(--sombra);
+    margin-bottom:24px;
+  }
+  .cartao h2{
+    font-size:16px;
+    margin:0 0 18px;
+    color:var(--azul-sus-escuro);
+  }
+  .grade{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px 16px;
+  }
+  .campo{display:flex;flex-direction:column;gap:5px;}
+  .campo.col-2{grid-column:span 2;}
+  .campo.col-4{grid-column:span 4;}
+  .campo.col-1{grid-column:span 1;}
+  label{font-size:12.5px;font-weight:600;color:var(--texto-suave);}
+  input[type=text], select{
+    border:1px solid var(--azul-borda);
+    border-radius:6px;
+    padding:9px 10px;
+    font-size:13.5px;
+    font-family:inherit;
+    color:var(--texto);
+    background:var(--branco);
+  }
+  input:focus, select:focus, button:focus-visible{
+    outline:2px solid var(--azul-sus);
+    outline-offset:1px;
+  }
+  input[readonly]{background:var(--azul-claro);color:var(--texto-suave);}
+  .campo-logradouro{position:relative;}
+  .campo-logradouro .linha-input{display:flex;gap:6px;}
+  .btn{
+    border:none;
+    border-radius:6px;
+    padding:9px 16px;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn-primario{background:var(--azul-sus);color:var(--branco);}
+  .btn-primario:hover{background:var(--azul-sus-escuro);}
+  .btn-secundario{background:var(--azul-claro);color:var(--azul-sus-escuro);}
+  .btn-secundario:hover{background:var(--azul-borda);}
+  .btn-texto{background:none;color:var(--azul-sus);padding:6px 8px;text-decoration:underline;font-weight:600;}
+  .btn-perigo{background:#FBE9E7;color:var(--vermelho);}
+  .acoes-form{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{
+    text-align:left;
+    font-size:11.5px;
+    letter-spacing:.02em;
+    color:var(--texto-suave);
+    border-bottom:2px solid var(--azul-borda);
+    padding:8px 10px;
+  }
+  tbody td{padding:9px 10px;border-bottom:1px solid #EEF2F8;}
+  tbody tr:hover{background:var(--azul-claro);}
+  .vazio{padding:26px 10px;text-align:center;color:var(--texto-suave);font-size:13.5px;}
+  .badge{
+    display:inline-block;
+    padding:3px 9px;
+    border-radius:20px;
+    font-size:11.5px;
+    font-weight:700;
+  }
+  .badge-normal{background:var(--azul-claro);color:var(--azul-sus-escuro);}
+  .badge-urgente{background:#FBE7E6;color:var(--vermelho);}
+  .paginacao{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px;}
+  .paginacao button{
+    border:1px solid var(--azul-borda);
+    background:var(--branco);
+    border-radius:6px;
+    width:30px;height:30px;
+    cursor:pointer;
+    color:var(--azul-sus);
+    font-weight:700;
+  }
+  .paginacao button:disabled{color:#C6D0DC;cursor:not-allowed;}
+  .paginacao span{font-size:12.5px;color:var(--texto-suave);}
+
+  /* Modal */
+  .sobreposicao{
+    position:fixed;inset:0;background:rgba(15,30,60,.45);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:5vh 16px;z-index:50;overflow-y:auto;
+  }
+  .sobreposicao.aberta{display:flex;}
+  .modal{
+    background:var(--branco);
+    border-radius:10px;
+    width:100%;max-width:560px;
+    box-shadow:0 10px 30px rgba(10,30,70,.25);
+  }
+  .modal-cabecalho{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 20px;border-bottom:1px solid var(--azul-borda);
+  }
+  .modal-cabecalho h3{margin:0;font-size:15px;color:var(--azul-sus-escuro);}
+  .modal-fechar{background:none;border:none;font-size:18px;cursor:pointer;color:var(--texto-suave);}
+  .modal-corpo{padding:16px 20px;}
+  .modal-rodape{padding:14px 20px;border-top:1px solid var(--azul-borda);display:flex;justify-content:space-between;gap:10px;}
+  .lista-logradouros{max-height:280px;overflow-y:auto;border:1px solid var(--azul-borda);border-radius:8px;margin-top:10px;}
+  .item-logradouro{
+    padding:10px 12px;border-bottom:1px solid #EEF2F8;cursor:pointer;
+  }
+  .item-logradouro:last-child{border-bottom:none;}
+  .item-logradouro:hover{background:var(--azul-claro);}
+  .item-logradouro strong{display:block;font-size:13.5px;}
+  .item-logradouro span{font-size:12px;color:var(--texto-suave);}
+  .form-cadastro-logradouro{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
+  .aviso{font-size:12px;color:var(--texto-suave);margin-top:8px;line-height:1.5;}
+
+  /* Popup de sugestão de nomes já cadastrados */
+  .campo-nome{position:relative;}
+  .campo-medicamento{position:relative;}
+  .popup-sugestoes{
+    display:none;
+    position:absolute;top:100%;left:0;right:0;margin-top:4px;
+    background:var(--branco);
+    border:1px solid var(--azul-borda);
+    border-radius:8px;
+    max-height:230px;overflow-y:auto;
+    box-shadow:0 8px 22px rgba(10,30,70,.15);
+    z-index:40;
+  }
+  .popup-sugestoes.aberta{display:block;}
+  .item-sugestao{padding:8px 12px;cursor:pointer;border-bottom:1px solid #EEF2F8;}
+  .item-sugestao:last-child{border-bottom:none;}
+  .item-sugestao:hover{background:var(--azul-claro);}
+  .item-sugestao strong{display:block;font-size:13px;}
+  .item-sugestao small{display:block;font-size:11.5px;color:var(--texto-suave);margin-top:1px;}
+
+  /* Lista de ACS cadastrados */
+  .lista-agentes{border:1px solid var(--azul-borda);border-radius:8px;margin-top:14px;overflow:hidden;}
+  .item-agente{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 14px;border-bottom:1px solid #EEF2F8;
+  }
+  .item-agente:last-child{border-bottom:none;}
+  .item-agente strong{font-size:13.5px;display:block;}
+  .item-agente span{font-size:12px;color:var(--texto-suave);}
+  .form-cadastro-agente{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;}
+  @media (max-width:720px){
+    .form-cadastro-agente{grid-template-columns:1fr;}
+  }
+
+  input[type=file]{
+    border:1px dashed var(--azul-borda);
+    border-radius:6px;
+    padding:9px 10px;
+    font-size:13px;
+    background:var(--azul-claro);
+    color:var(--texto-suave);
+  }
+  .assinatura-preview{
+    margin-top:10px;
+    border:1px solid var(--azul-borda);
+    border-radius:8px;
+    padding:14px;
+    background:var(--cinza-bg);
+    display:flex;
+    align-items:center;
+    min-height:70px;
+  }
+  .assinatura-preview img{max-height:70px;max-width:260px;object-fit:contain;}
+  .assinatura-preview .vazio-assinatura{font-size:12.5px;color:var(--texto-suave);}
+
+  footer.rodape{
+    text-align:center;font-size:11.5px;color:var(--texto-suave);
+    padding:20px 0 40px;
+  }
+
+  /* Área de impressão */
+  #areaImpressao{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #areaImpressao, #areaImpressao *{visibility:visible;}
+    #areaImpressao{
+      display:block;position:absolute;top:0;left:0;width:100%;
+      padding:40px 50px;font-family:"Segoe UI",Arial,sans-serif;color:#111;
+    }
+  }
+
+  @media (max-width:720px){
+    .grade{grid-template-columns:repeat(2,1fr);}
+    .campo.col-2, .campo.col-4{grid-column:span 2;}
+    .form-cadastro-logradouro{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <img class="logo-sus" src="data:image/png;base64,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" alt="Logo do SUS" height="40">
+  <div>
+    <h1>Sistema de Cadastro do Cidadão</h1>
+    <p>Unidade Básica de Saúde — Sistema Único de Saúde (SUS)</p>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+    <span style="font-size:12.5px;color:var(--texto-suave);">Usuário: <strong id="nomeUsuarioLogado" style="color:var(--azul-sus-escuro);">—</strong></span>
+    <button type="button" class="btn btn-secundario" id="btnSair">Sair</button>
+  </div>
+</header>
+
+<main>
+
+  <nav class="abas">
+    <button class="aba-botao ativa" data-aba="declaracao">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/><path d="M9 9h1"/></svg>
+      Declaração de Residência
+    </button>
+    <button class="aba-botao" data-aba="receitas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="8" height="8" rx="2" transform="rotate(-45 7 15)"/><path d="M14.5 9.5L18 6a3 3 0 1 1 4 4l-3.5 3.5"/><line x1="10" y1="12" x2="12" y2="14"/></svg>
+      Renovação de Receitas
+    </button>
+    <button class="aba-botao" data-aba="configuracoes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Configurações
+    </button>
+  </nav>
+
+  <!-- ===================== ABA: DECLARAÇÃO DE RESIDÊNCIA ===================== -->
+  <section class="aba ativa" id="aba-declaracao">
+
+    <div class="cartao">
+      <h2>Emitir declaração de residência</h2>
+      <form id="formDeclaracao" autocomplete="off">
+        <div class="grade">
+          <div class="campo col-2 campo-nome">
+            <label for="declNome">Nome</label>
+            <input type="text" id="declNome" autocomplete="off" required>
+            <div class="popup-sugestoes" id="popupSugestoesNome"></div>
+          </div>
+          <div class="campo col-2">
+            <label for="declCpf">CPF</label>
+            <input type="text" id="declCpf" maxlength="14" placeholder="000.000.000-00" required>
+          </div>
+
+          <div class="campo col-2 campo-logradouro">
+            <label for="declLogradouro">Logradouro</label>
+            <div class="linha-input">
+              <input type="text" id="declLogradouro" placeholder="Selecione um endereço cadastrado" readonly required>
+              <button type="button" class="btn btn-secundario" id="btnAbrirLogradouros">Buscar</button>
+            </div>
+          </div>
+          <div class="campo col-1">
+            <label for="declNumero">Número</label>
+            <input type="text" id="declNumero" required>
+          </div>
+          <div class="campo col-1">
+            <label for="declComplemento">Complemento</label>
+            <input type="text" id="declComplemento">
+          </div>
+
+          <div class="campo col-2">
+            <label for="declBairro">Bairro</label>
+            <input type="text" id="declBairro" readonly>
+          </div>
+          <div class="campo col-1">
+            <label for="declCidade">Cidade</label>
+            <input type="text" id="declCidade" readonly>
+          </div>
+          <div class="campo col-1">
+            <label for="declCep">CEP</label>
+            <input type="text" id="declCep" readonly>
+          </div>
+
+          <div class="campo col-1">
+            <label for="declUf">UF</label>
+            <input type="text" id="declUf" readonly>
+          </div>
+          <div class="campo col-3">
+            <label for="declEstado">Estado</label>
+            <input type="text" id="declEstado" readonly>
+          </div>
+
+          <div class="campo col-2">
+            <label for="declAcs">Agente Comunitário de Saúde (ACS)</label>
+            <input type="text" id="declAcs" readonly>
+          </div>
+          <div class="campo col-1">
+            <label for="declArea">Área</label>
+            <input type="text" id="declArea" readonly>
+          </div>
+          <div class="campo col-1">
+            <label for="declMicroarea">Microárea</label>
+            <input type="text" id="declMicroarea" readonly>
+          </div>
+        </div>
+
+        <div class="acoes-form">
+          <button type="button" class="btn btn-secundario" id="btnLimparDeclaracao">Limpar</button>
+          <button type="submit" class="btn btn-primario">Emitir e imprimir</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="cartao">
+      <h2>Histórico de declarações emitidas</h2>
+      <div id="tabelaDeclaracoes"></div>
+      <div class="paginacao" id="paginacaoDeclaracoes"></div>
+    </div>
+
+  </section>
+
+  <!-- ===================== ABA: RENOVAÇÃO DE RECEITAS ===================== -->
+  <section class="aba" id="aba-receitas">
+
+    <div class="cartao">
+      <h2>Nova renovação de receita</h2>
+      <form id="formReceita" autocomplete="off">
+        <div class="grade">
+          <div class="campo col-2 campo-nome">
+            <label for="rcNome">Nome</label>
+            <input type="text" id="rcNome" autocomplete="off" required>
+            <div class="popup-sugestoes" id="popupSugestoesRcNome"></div>
+          </div>
+          <div class="campo col-2">
+            <label for="rcCpf">CPF</label>
+            <input type="text" id="rcCpf" maxlength="14" placeholder="000.000.000-00" required>
+          </div>
+
+          <div class="campo col-2">
+            <label for="rcAcsSelect">Agente de Saúde</label>
+            <select id="rcAcsSelect" required>
+              <option value="">Selecione um ACS cadastrado</option>
+            </select>
+          </div>
+          <div class="campo col-2 campo-medicamento">
+            <label for="rcMedicamento">Medicamento</label>
+            <input type="text" id="rcMedicamento" autocomplete="off" required>
+            <div class="popup-sugestoes" id="popupSugestoesMedicamento"></div>
+          </div>
+
+          <div class="campo col-1">
+            <label for="rcQuantidade">Quantidade</label>
+            <input type="text" id="rcQuantidade" placeholder="Ex.: 30 comprimidos" required>
+          </div>
+          <div class="campo col-1">
+            <label for="rcDose">Dose</label>
+            <input type="text" id="rcDose" placeholder="Ex.: 500mg" required>
+          </div>
+          <div class="campo col-2">
+            <label for="rcPosologia">Posologia</label>
+            <input type="text" id="rcPosologia" placeholder="Ex.: 1 comprimido a cada 8 horas" required>
+          </div>
+
+          <div class="campo col-2">
+            <label for="rcData">Data de renovação</label>
+            <input type="date" id="rcData" required>
+          </div>
+        </div>
+        <p class="aviso" id="avisoReceita"></p>
+        <div class="acoes-form">
+          <button type="button" class="btn btn-secundario" id="btnLimparReceita">Limpar</button>
+          <button type="submit" class="btn btn-primario">Acionar renovação</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="cartao" id="cartaoProntuario" style="display:none;">
+      <h2>Prontuário do cidadão — <span id="prontuarioNome"></span></h2>
+      <p class="aviso">Histórico de renovações por medicamento, da data mais recente para a mais antiga.</p>
+      <div id="prontuarioConteudo"></div>
+    </div>
+
+    <div class="cartao">
+      <h2>Histórico geral de renovações</h2>
+      <div id="tabelaReceitas"></div>
+      <div class="paginacao" id="paginacaoReceitas"></div>
+    </div>
+
+  </section>
+
+  <!-- ===================== ABA: CONFIGURAÇÕES ===================== -->
+  <section class="aba" id="aba-configuracoes">
+
+    <div class="cartao">
+      <h2>Dados da unidade</h2>
+      <form id="formConfiguracao" autocomplete="off">
+        <div class="grade">
+          <div class="campo col-2">
+            <label for="cfgNomeUnidade">Nome da unidade</label>
+            <input type="text" id="cfgNomeUnidade" required>
+          </div>
+          <div class="campo col-2">
+            <label for="cfgCnes">CNES</label>
+            <input type="text" id="cfgCnes" required>
+          </div>
+
+          <div class="campo col-2">
+            <label for="cfgLogradouro">Logradouro</label>
+            <input type="text" id="cfgLogradouro" required>
+          </div>
+          <div class="campo col-1">
+            <label for="cfgNumero">Número</label>
+            <input type="text" id="cfgNumero" required>
+          </div>
+          <div class="campo col-1">
+            <label for="cfgComplemento">Complemento</label>
+            <input type="text" id="cfgComplemento">
+          </div>
+
+          <div class="campo col-2">
+            <label for="cfgBairro">Bairro</label>
+            <input type="text" id="cfgBairro" required>
+          </div>
+          <div class="campo col-1">
+            <label for="cfgCidade">Cidade</label>
+            <input type="text" id="cfgCidade" readonly>
+          </div>
+          <div class="campo col-1">
+            <label for="cfgUf">UF</label>
+            <input type="text" id="cfgUf" maxlength="2" readonly>
+          </div>
+
+          <div class="campo col-2">
+            <label for="cfgResponsavel">Profissional Responsável Técnico</label>
+            <input type="text" id="cfgResponsavel" required>
+          </div>
+          <div class="campo col-2">
+            <label for="cfgRegistro">Registro profissional do responsável</label>
+            <input type="text" id="cfgRegistro" placeholder="Ex.: COREN 000000, CRM 000000..." required>
+          </div>
+
+          <div class="campo col-4">
+            <label for="cfgAssinatura">Assinatura digital (imagem)</label>
+            <input type="file" id="cfgAssinatura" accept="image/*">
+            <div class="assinatura-preview" id="assinaturaPreview">
+              <span class="vazio-assinatura">Nenhuma assinatura cadastrada ainda.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="acoes-form">
+          <button type="button" class="btn btn-secundario" id="btnRemoverAssinatura">Remover assinatura</button>
+          <button type="submit" class="btn btn-primario">Salvar configuração</button>
+        </div>
+      </form>
+      <p class="aviso" id="avisoConfiguracao"></p>
+    </div>
+
+    <div class="cartao">
+      <h2>Agentes Comunitários de Saúde (ACS)</h2>
+      <form id="formAgente" autocomplete="off">
+        <div class="form-cadastro-agente">
+          <div class="campo">
+            <label for="agenteNome">Nome completo</label>
+            <input type="text" id="agenteNome" required>
+          </div>
+          <div class="campo">
+            <label for="agenteArea">Área</label>
+            <input type="text" id="agenteArea" maxlength="6" placeholder="Ex.: 014" required>
+          </div>
+          <div class="campo">
+            <label for="agenteMicroarea">Microárea</label>
+            <input type="text" id="agenteMicroarea" maxlength="6" placeholder="Ex.: 16" required>
+          </div>
+          <div class="campo">
+            <button type="submit" class="btn btn-primario">Adicionar ACS</button>
+          </div>
+        </div>
+      </form>
+      <div class="lista-agentes" id="listaAgentes"></div>
+      <p class="aviso">Os ACS cadastrados aqui ficam disponíveis para seleção ao cadastrar um logradouro na Declaração de Residência.</p>
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="rodape">Desenvolvido por Lucas Mateus Salviano</footer>
+
+<!-- Modal: selecionar logradouro cadastrado -->
+<div class="sobreposicao" id="modalSelecionarLogradouro">
+  <div class="modal">
+    <div class="modal-cabecalho">
+      <h3>Endereços cadastrados</h3>
+      <button class="modal-fechar" data-fechar="modalSelecionarLogradouro">✕</button>
+    </div>
+    <div class="modal-corpo">
+      <input type="text" id="buscaLogradouro" placeholder="Buscar por logradouro ou bairro...">
+      <div class="lista-logradouros" id="listaLogradouros"></div>
+    </div>
+    <div class="modal-rodape">
+      <button type="button" class="btn-texto" id="btnAbrirCadastroLogradouro">+ Cadastrar novo logradouro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: cadastrar/gerenciar logradouro -->
+<div class="sobreposicao" id="modalCadastroLogradouro">
+  <div class="modal">
+    <div class="modal-cabecalho">
+      <h3>Cadastrar logradouro</h3>
+      <button class="modal-fechar" data-fechar="modalCadastroLogradouro">✕</button>
+    </div>
+    <div class="modal-corpo">
+      <form id="formCadastroLogradouro">
+        <div class="form-cadastro-logradouro">
+          <div class="campo">
+            <label for="novoLogradouro">Logradouro</label>
+            <input type="text" id="novoLogradouro" required>
+          </div>
+          <div class="campo">
+            <label for="novoBairro">Bairro</label>
+            <input type="text" id="novoBairro" required>
+          </div>
+          <div class="campo">
+            <label for="novoCep">CEP</label>
+            <input type="text" id="novoCep" maxlength="9" placeholder="00000-000" required>
+          </div>
+          <div class="campo">
+            <label for="novoCidade">Cidade</label>
+            <input type="text" id="novoCidade" readonly>
+          </div>
+          <div class="campo">
+            <label for="novoUf">UF</label>
+            <input type="text" id="novoUf" maxlength="2" readonly>
+          </div>
+          <div class="campo">
+            <label for="novoEstado">Estado</label>
+            <input type="text" id="novoEstado" readonly>
+          </div>
+          <div class="campo">
+            <label for="novoAcsSelect">Agente Comunitário de Saúde</label>
+            <select id="novoAcsSelect" required>
+              <option value="">Selecione um ACS cadastrado</option>
+            </select>
+          </div>
+        </div>
+        <p class="aviso">Nenhum ACS na lista? Cadastre-o antes na aba Configurações → Agentes Comunitários de Saúde (ACS).</p>
+        <div class="acoes-form">
+          <button type="submit" class="btn btn-primario">Salvar logradouro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Área oculta usada apenas para impressão -->
+<div id="areaImpressao"></div>
+
+<script>
+(async function(){
+
+  /* =====================  Utilidades  ===================== */
+  const $ = (sel, ctx) => (ctx||document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
+
+  function gerarId(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  }
+  function apenasDigitos(v){ return (v||'').replace(/\D/g,''); }
+  function formatarCPF(v){
+    const d = apenasDigitos(v).slice(0,11);
+    return d
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+  function formatarCEP(v){
+    const d = apenasDigitos(v).slice(0,8);
+    return d.replace(/(\d{5})(\d)/, '$1-$2');
+  }
+  function formatarDataHora(iso){
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  }
+  function formatarData(isoData){
+    if(!isoData) return '—';
+    const partes = isoData.split('-');
+    if(partes.length !== 3) return isoData;
+    const [ano,mes,dia] = partes;
+    return `${dia}/${mes}/${ano}`;
+  }
+  function dataPorExtenso(){
+    const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const d = new Date();
+    return `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  }
+
+  /* =====================  Sanitização de campos de texto  ===================== */
+  function removerAcentos(v){
+    return v.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  function sanitizarTexto(valor, permitirNumeros){
+    let v = removerAcentos(valor || '').toUpperCase();
+    v = v.replace(/^\s+/, '');
+    const permitidos = permitirNumeros ? /[^A-Z0-9 ]/g : /[^A-Z ]/g;
+    v = v.replace(permitidos, '');
+    v = v.replace(/ {2,}/g, ' ');
+    return v;
+  }
+  function aplicarSanitizacao(el, permitirNumeros){
+    if(!el) return;
+    el.addEventListener('input', ()=>{
+      const cursor = el.selectionStart;
+      const antes = el.value;
+      const depois = sanitizarTexto(antes, permitirNumeros);
+      if(depois !== antes){
+        el.value = depois;
+        const diff = antes.length - depois.length;
+        const novaPos = Math.max(0, cursor - diff);
+        el.setSelectionRange(novaPos, novaPos);
+      }
+    });
+    el.addEventListener('blur', ()=>{
+      el.value = el.value.replace(/\s+$/, '');
+    });
+  }
+
+  /* =====================  Supabase: cliente e autenticação  ===================== */
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const { data: sessaoInicial } = await supabase.auth.getSession();
+  if(!sessaoInicial.session){
+    window.location.href = 'login.html';
+    return;
+  }
+  const emailUsuarioLogado = sessaoInicial.session.user.email || '';
+  const nomeUsuarioEl = $('#nomeUsuarioLogado');
+  if(nomeUsuarioEl) nomeUsuarioEl.textContent = emailUsuarioLogado.split('@')[0] || 'usuário';
+
+  supabase.auth.onAuthStateChange((evento, sessao)=>{
+    if(evento === 'SIGNED_OUT' || !sessao){
+      window.location.href = 'login.html';
+    }
+  });
+
+  const btnSair = $('#btnSair');
+  if(btnSair){
+    btnSair.addEventListener('click', async ()=>{
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  }
+
+  /* =====================  Camada de dados (Supabase)  =====================
+     Tabelas pequenas e de curadoria (ACS, logradouros, medicamentos) ficam
+     em cache local, atualizado a cada inclusão/remoção — evita reconsultar
+     o Supabase a cada tecla digitada. Cidadãos, declarações e renovações
+     são consultados diretamente no banco (podem crescer bastante).
+  */
+  let cacheAgentes = [];
+  let cacheLogradouros = [];
+  let cacheMedicamentos = [];
+
+  function linhaParaCidadao(row){
+    return {
+      id: row.id, nome: row.nome, cpf: formatarCPF(row.cpf || ''),
+      logradouro: row.logradouro || '', numero: row.numero || '',
+      complemento: row.complemento || '', bairro: row.bairro || '',
+      cidade: row.cidade || '', uf: row.uf || '', estado: row.estado || '',
+      cep: row.cep || '', acs: row.acs || '', area: row.area || '',
+      microarea: row.microarea || '', logradouroId: row.logradouro_id || null
+    };
+  }
+  function linhaParaDeclaracao(row){
+    return {
+      id: row.id, nome: row.nome, cpf: formatarCPF(row.cpf || ''),
+      logradouro: row.logradouro, numero: row.numero, complemento: row.complemento,
+      bairro: row.bairro, cidade: row.cidade, uf: row.uf, estado: row.estado, cep: row.cep,
+      acs: row.acs, area: row.area, microarea: row.microarea, logradouroId: row.logradouro_id,
+      data: row.data
+    };
+  }
+  function linhaParaRenovacao(row){
+    return {
+      id: row.id, nome: row.nome, cpf: formatarCPF(row.cpf || ''),
+      acsId: row.acs_id, acsNome: row.acs_nome, medicamento: row.medicamento,
+      quantidade: row.quantidade, dose: row.dose, posologia: row.posologia,
+      dataRenovacao: row.data_renovacao, dataRegistro: row.data_registro
+    };
+  }
+
+  const DB = {
+    async carregarCaches(){
+      const [ag, lg, md] = await Promise.all([
+        supabase.from('agentes').select('*').order('nome'),
+        supabase.from('logradouros').select('*').order('criado_em'),
+        supabase.from('medicamentos').select('*').order('nome')
+      ]);
+      cacheAgentes = (ag.data || []).map(a=> ({ id:a.id, nome:a.nome, area:a.area, microarea:a.microarea }));
+      cacheLogradouros = (lg.data || []).map(l=> ({ id:l.id, logradouro:l.logradouro, bairro:l.bairro, cep:l.cep, cidade:l.cidade, uf:l.uf, estado:l.estado, acsId:l.acs_id }));
+      cacheMedicamentos = (md.data || []).map(m=> ({ id:m.id, nome:m.nome }));
+    },
+
+    /* ---- Agentes Comunitários de Saúde (ACS) ---- */
+    getAgentes(){ return cacheAgentes; },
+    async criarAgente(a){
+      const { error } = await supabase.from('agentes').insert({ id:a.id, nome:a.nome, area:a.area, microarea:a.microarea });
+      if(error){ alert('Erro ao salvar ACS: '+error.message); return null; }
+      cacheAgentes.push(a);
+      return a;
+    },
+    async removerAgente(id){
+      const { error } = await supabase.from('agentes').delete().eq('id', id);
+      if(error){ alert('Erro ao remover ACS: '+error.message); return false; }
+      cacheAgentes = cacheAgentes.filter(a=> a.id !== id);
+      return true;
+    },
+
+    /* ---- Logradouros ---- */
+    getLogradouros(){ return cacheLogradouros; },
+    async criarLogradouro(l){
+      const { error } = await supabase.from('logradouros').insert({
+        id:l.id, logradouro:l.logradouro, bairro:l.bairro, cep:l.cep,
+        cidade:l.cidade, uf:l.uf, estado:l.estado, acs_id:l.acsId
+      });
+      if(error){ alert('Erro ao salvar logradouro: '+error.message); return null; }
+      cacheLogradouros.push(l);
+      return l;
+    },
+
+    /* ---- Medicamentos ---- */
+    getMedicamentos(){ return cacheMedicamentos; },
+    async criarMedicamento(nome){
+      const novo = { id: gerarId(), nome };
+      const { error } = await supabase.from('medicamentos').insert(novo);
+      if(error){
+        if(error.code !== '23505') console.error(error); // 23505 = já existe (corrida entre abas): ignora
+        return null;
+      }
+      cacheMedicamentos.push(novo);
+      return novo;
+    },
+
+    /* ---- Cidadãos ---- */
+    async buscarCidadaoPorCpf(cpf){
+      const { data, error } = await supabase.from('cidadaos').select('*').eq('cpf', apenasDigitos(cpf)).maybeSingle();
+      if(error){ console.error(error); return null; }
+      return data ? linhaParaCidadao(data) : null;
+    },
+    async buscarCidadaosPorNome(termo, limite){
+      const { data, error } = await supabase.from('cidadaos').select('*').ilike('nome', '%'+termo+'%').order('nome').limit(limite || 8);
+      if(error){ console.error(error); return []; }
+      return data.map(linhaParaCidadao);
+    },
+    async upsertCidadao(c){
+      const payload = {
+        id: c.id || gerarId(), nome: c.nome, cpf: apenasDigitos(c.cpf),
+        logradouro: c.logradouro || null, numero: c.numero || null, complemento: c.complemento || null,
+        bairro: c.bairro || null, cidade: c.cidade || null, uf: c.uf || null, estado: c.estado || null,
+        cep: c.cep || null, acs: c.acs || null, area: c.area || null, microarea: c.microarea || null,
+        logradouro_id: c.logradouroId || null, atualizado_em: new Date().toISOString()
+      };
+      const { data, error } = await supabase.from('cidadaos').upsert(payload, { onConflict: 'cpf' }).select().single();
+      if(error){ alert('Erro ao salvar cidadão: '+error.message); return null; }
+      return linhaParaCidadao(data);
+    },
+    async garantirCidadaoPorCpf(nome, cpf){
+      // Upsert parcial: só grava nome+cpf. Se o cidadão já existir, o endereço
+      // e demais dados salvos anteriormente (ex.: pela Declaração de Residência)
+      // permanecem intactos, pois só as colunas enviadas aqui são atualizadas.
+      const { error } = await supabase.from('cidadaos').upsert(
+        { id: gerarId(), nome, cpf: apenasDigitos(cpf) },
+        { onConflict: 'cpf' }
+      );
+      if(error) console.error(error);
+    },
+
+    /* ---- Declarações de residência ---- */
+    async getDeclaracoes(){
+      const { data, error } = await supabase.from('declaracoes').select('*').order('data', { ascending:false });
+      if(error){ console.error(error); return []; }
+      return data.map(linhaParaDeclaracao);
+    },
+    async criarDeclaracao(d){
+      const payload = {
+        id: d.id, nome: d.nome, cpf: apenasDigitos(d.cpf), logradouro: d.logradouro, numero: d.numero,
+        complemento: d.complemento, bairro: d.bairro, cidade: d.cidade, uf: d.uf, estado: d.estado,
+        cep: d.cep, acs: d.acs, area: d.area, microarea: d.microarea, logradouro_id: d.logradouroId,
+        data: d.data
+      };
+      const { error } = await supabase.from('declaracoes').insert(payload);
+      if(error){ alert('Erro ao registrar declaração: '+error.message); return false; }
+      return true;
+    },
+    async buscarDeclaracaoPorId(id){
+      const { data, error } = await supabase.from('declaracoes').select('*').eq('id', id).maybeSingle();
+      if(error || !data) return null;
+      return linhaParaDeclaracao(data);
+    },
+
+    /* ---- Renovações de receita ---- */
+    async getRenovacoes(){
+      const { data, error } = await supabase.from('renovacoes').select('*').order('data_renovacao', { ascending:false });
+      if(error){ console.error(error); return []; }
+      return data.map(linhaParaRenovacao);
+    },
+    async getRenovacoesPorCpf(cpf){
+      const { data, error } = await supabase.from('renovacoes').select('*').eq('cpf', apenasDigitos(cpf));
+      if(error){ console.error(error); return []; }
+      return data.map(linhaParaRenovacao);
+    },
+    async criarRenovacao(r){
+      const payload = {
+        id: r.id, nome: r.nome, cpf: apenasDigitos(r.cpf), acs_id: r.acsId, acs_nome: r.acsNome,
+        medicamento: r.medicamento, quantidade: r.quantidade, dose: r.dose, posologia: r.posologia,
+        data_renovacao: r.dataRenovacao, data_registro: r.dataRegistro
+      };
+      const { error } = await supabase.from('renovacoes').insert(payload);
+      if(error){ alert('Erro ao registrar renovação: '+error.message); return false; }
+      return true;
+    },
+
+    /* ---- Configuração da unidade ---- */
+    async getConfiguracao(){
+      const { data, error } = await supabase.from('configuracao').select('*').eq('id', 1).maybeSingle();
+      if(error){ console.error(error); return null; }
+      if(!data) return null;
+      return {
+        nomeUnidade: data.nome_unidade || '', cnes: data.cnes || '', logradouro: data.logradouro || '',
+        numero: data.numero || '', complemento: data.complemento || '', bairro: data.bairro || '',
+        cidade: data.cidade || '', uf: data.uf || '', responsavel: data.responsavel || '',
+        registro: data.registro || '', assinatura: data.assinatura || ''
+      };
+    },
+    async salvarConfiguracao(cfg){
+      const payload = {
+        id: 1, nome_unidade: cfg.nomeUnidade, cnes: cfg.cnes, logradouro: cfg.logradouro,
+        numero: cfg.numero, complemento: cfg.complemento, bairro: cfg.bairro, cidade: cfg.cidade,
+        uf: cfg.uf, responsavel: cfg.responsavel, registro: cfg.registro, assinatura: cfg.assinatura
+      };
+      const { error } = await supabase.from('configuracao').upsert(payload, { onConflict: 'id' });
+      if(error){ alert('Erro ao salvar configuração: '+error.message); return false; }
+      return true;
+    }
+  };
+
+  /* =====================  Abas  ===================== */
+  $$('.aba-botao').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      $$('.aba-botao').forEach(b=>b.classList.remove('ativa'));
+      $$('.aba').forEach(a=>a.classList.remove('ativa'));
+      btn.classList.add('ativa');
+      $('#aba-'+btn.dataset.aba).classList.add('ativa');
+    });
+  });
+
+  /* =====================  Modais  ===================== */
+  function abrirModal(id){ $('#'+id).classList.add('aberta'); }
+  function fecharModal(id){ $('#'+id).classList.remove('aberta'); }
+  $$('[data-fechar]').forEach(b=> b.addEventListener('click', ()=> fecharModal(b.dataset.fechar)));
+  $$('.sobreposicao').forEach(ov=>{
+    ov.addEventListener('click', (e)=>{ if(e.target === ov) fecharModal(ov.id); });
+  });
+
+  /* =====================  CPF/CEP: máscara automática  ===================== */
+  $('#declCpf').addEventListener('input', e=> e.target.value = formatarCPF(e.target.value));
+  $('#rcCpf').addEventListener('input', e=> e.target.value = formatarCPF(e.target.value));
+  $('#novoCep').addEventListener('input', e=> e.target.value = formatarCEP(e.target.value));
+
+  /* =====================  Campos travados: Cidade sempre SANTA RITA, UF sempre PB  ===================== */
+  const CIDADE_PADRAO = 'SANTA RITA';
+  const UF_PADRAO = 'PB';
+  const ESTADO_PADRAO = 'PARAIBA';
+  function travarCidadeUf(){
+    $('#novoCidade').value = CIDADE_PADRAO;
+    $('#novoUf').value = UF_PADRAO;
+    $('#novoEstado').value = ESTADO_PADRAO;
+    $('#cfgCidade').value = CIDADE_PADRAO;
+    $('#cfgUf').value = UF_PADRAO;
+  }
+  travarCidadeUf();
+
+  /* =====================  Agentes Comunitários de Saúde (ACS)  ===================== */
+  function renderizarSelectAgentes(){
+    const sel = $('#novoAcsSelect');
+    if(!sel) return;
+    const atual = sel.value;
+    const agentes = DB.getAgentes();
+    sel.innerHTML = '<option value="">Selecione um ACS cadastrado</option>' +
+      agentes.map(a=> `<option value="${a.id}">${a.nome} — Área ${a.area}, Microárea ${a.microarea}</option>`).join('');
+    if(agentes.some(a=>a.id === atual)) sel.value = atual;
+  }
+
+  function renderizarAgentes(){
+    const cont = $('#listaAgentes');
+    const agentes = DB.getAgentes();
+    if(agentes.length === 0){
+      cont.innerHTML = '<div class="vazio">Nenhum ACS cadastrado ainda.</div>';
+      return;
+    }
+    cont.innerHTML = agentes.map(a=>`
+      <div class="item-agente" data-id="${a.id}">
+        <div>
+          <strong>${a.nome}</strong>
+          <span>Área ${a.area} · Microárea ${a.microarea}</span>
+        </div>
+        <button type="button" class="btn-texto" data-remover-agente="${a.id}">Remover</button>
+      </div>
+    `).join('');
+    $$('[data-remover-agente]', cont).forEach(b=>{
+      b.addEventListener('click', async ()=>{
+        if(!confirm('Remover este ACS? Endereços já cadastrados com ele continuarão vinculados ao registro.')) return;
+        const ok = await DB.removerAgente(b.dataset.removerAgente);
+        if(!ok) return;
+        renderizarAgentes();
+        renderizarSelectAgentes();
+        renderizarSelectAcsReceita();
+      });
+    });
+  }
+
+  $('#formAgente').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const novo = {
+      id: gerarId(),
+      nome: $('#agenteNome').value.trim(),
+      area: $('#agenteArea').value.trim(),
+      microarea: $('#agenteMicroarea').value.trim()
+    };
+    const criado = await DB.criarAgente(novo);
+    if(!criado) return;
+    $('#formAgente').reset();
+    renderizarAgentes();
+    renderizarSelectAgentes();
+    renderizarSelectAcsReceita();
+  });
+
+  /* =====================  Seleção de logradouro cadastrado  ===================== */
+  let logradouroSelecionado = null;
+
+  function renderizarListaLogradouros(filtro){
+    const lista = DB.getLogradouros().filter(l=>{
+      if(!filtro) return true;
+      const alvo = (l.logradouro+' '+l.bairro).toLowerCase();
+      return alvo.includes(filtro.toLowerCase());
+    });
+    const cont = $('#listaLogradouros');
+    if(lista.length === 0){
+      cont.innerHTML = '<div class="vazio">Nenhum logradouro cadastrado ainda. Use "Cadastrar novo logradouro" abaixo.</div>';
+      return;
+    }
+    cont.innerHTML = lista.map(l=>{
+      const agente = DB.getAgentes().find(a=> a.id === l.acsId);
+      return `
+      <div class="item-logradouro" data-id="${l.id}">
+        <strong>${l.logradouro}</strong>
+        <span>${l.bairro} — ${l.cidade}/${l.uf} · CEP ${l.cep||'—'} · ACS: ${agente ? agente.nome : '—'}</span>
+      </div>
+    `;}).join('');
+    $$('.item-logradouro', cont).forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const l = DB.getLogradouros().find(x=>x.id === el.dataset.id);
+        selecionarLogradouro(l);
+        fecharModal('modalSelecionarLogradouro');
+      });
+    });
+  }
+
+  function selecionarLogradouro(l){
+    logradouroSelecionado = l;
+    const agente = DB.getAgentes().find(a=> a.id === l.acsId);
+    $('#declLogradouro').value = l.logradouro;
+    $('#declBairro').value = l.bairro;
+    $('#declCidade').value = l.cidade;
+    $('#declCep').value = l.cep || '';
+    $('#declUf').value = l.uf;
+    $('#declEstado').value = l.estado;
+    $('#declAcs').value = agente ? agente.nome : '';
+    $('#declArea').value = agente ? agente.area : '';
+    $('#declMicroarea').value = agente ? agente.microarea : '';
+  }
+
+  $('#btnAbrirLogradouros').addEventListener('click', ()=>{
+    $('#buscaLogradouro').value = '';
+    renderizarListaLogradouros('');
+    abrirModal('modalSelecionarLogradouro');
+  });
+  $('#buscaLogradouro').addEventListener('input', e=> renderizarListaLogradouros(e.target.value));
+
+  $('#btnAbrirCadastroLogradouro').addEventListener('click', ()=>{
+    fecharModal('modalSelecionarLogradouro');
+    $('#formCadastroLogradouro').reset();
+    travarCidadeUf();
+    renderizarSelectAgentes();
+    abrirModal('modalCadastroLogradouro');
+  });
+
+  $('#formCadastroLogradouro').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(!$('#novoAcsSelect').value){
+      alert('Selecione um ACS cadastrado. Se ainda não houver nenhum, cadastre um em Configurações → Agentes Comunitários de Saúde (ACS).');
+      return;
+    }
+    const novo = {
+      id: gerarId(),
+      logradouro: $('#novoLogradouro').value.trim(),
+      bairro: $('#novoBairro').value.trim(),
+      cep: $('#novoCep').value.trim(),
+      cidade: CIDADE_PADRAO,
+      uf: UF_PADRAO,
+      estado: ESTADO_PADRAO,
+      acsId: $('#novoAcsSelect').value
+    };
+    const criado = await DB.criarLogradouro(novo);
+    if(!criado) return;
+    fecharModal('modalCadastroLogradouro');
+    selecionarLogradouro(criado);
+  });
+
+  /* =====================  Emissão da declaração  ===================== */
+  async function textoDeclaracao(d){
+    const cfg = await DB.getConfiguracao();
+    const nomeUnidade = (cfg && cfg.nomeUnidade) ? cfg.nomeUnidade : '____________________';
+    const logoEl = document.querySelector('.logo-sus');
+    const logoSrc = logoEl ? logoEl.src : '';
+
+    const enderecoLinha = `${d.logradouro}, ${d.numero || 'S/N'}${d.complemento ? ' - '+d.complemento : ''} - ${d.bairro}, ${d.cidade}/${d.uf}, CEP ${d.cep || '—'}`;
+
+    const blocoResponsavel = (cfg && cfg.responsavel) ? `
+      <div style="margin-top:50px;text-align:center;font-size:13px;">
+        ${cfg.assinatura ? `<img src="${cfg.assinatura}" alt="Assinatura do responsável técnico" style="max-height:60px;max-width:220px;display:block;margin:0 auto 4px;">` : ''}
+        _________________________________________<br>
+        ${cfg.responsavel}${cfg.registro ? ' — '+cfg.registro : ''}<br>
+        Responsável Técnico
+      </div>
+    ` : '';
+
+    return `
+      <div style="text-align:center;margin-bottom:22px;">
+        ${logoSrc ? `<img src="${logoSrc}" alt="Logo do SUS" style="height:52px;display:block;margin:0 auto 10px;">` : ''}
+        <div style="font-size:13px;color:#444;line-height:1.5;">${nomeUnidade}${cfg && cfg.cnes ? ' — CNES '+cfg.cnes : ''}</div>
+        <h2 style="margin:10px 0 0;font-size:18px;letter-spacing:.03em;">DECLARAÇÃO DE RESIDÊNCIA</h2>
+      </div>
+      <p style="font-size:14px;line-height:1.9;text-align:justify;">
+        Declaramos para os devidos fins de comprovação de domínio, que o Sr.(a) <strong>${d.nome}</strong>,
+        CPF nº <strong>${d.cpf}</strong>, reside no endereço <strong>${enderecoLinha}</strong>,
+        sendo assistido pela Unidade de PSF <strong>${nomeUnidade}</strong>, estando devidamente
+        cadastrado na área <strong>${d.area || '—'}</strong>, microárea <strong>${d.microarea || '—'}</strong>,
+        e sendo acompanhado pelo ACS <strong>${d.acs || '—'}</strong>. Por todas as informações prestadas,
+        nos responsabilizamos e afirmamos a veracidade das mesmas.
+      </p>
+      <p style="font-size:14px;margin-top:30px;">Santa Rita - PB, ${dataPorExtenso()}.</p>
+      <div style="margin-top:60px;text-align:center;font-size:13px;">
+        _________________________________________<br>
+        Agente Comunitário de Saúde — ${d.acs || ''}
+      </div>
+      ${blocoResponsavel}
+    `;
+  }
+
+  async function imprimirDeclaracao(d){
+    $('#areaImpressao').innerHTML = await textoDeclaracao(d);
+    window.print();
+  }
+
+  $('#formDeclaracao').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(!logradouroSelecionado){
+      alert('Selecione um logradouro cadastrado antes de emitir a declaração.');
+      return;
+    }
+    const dados = {
+      nome: $('#declNome').value.trim(),
+      cpf: $('#declCpf').value.trim(),
+      logradouro: $('#declLogradouro').value,
+      numero: $('#declNumero').value.trim(),
+      complemento: $('#declComplemento').value.trim(),
+      bairro: $('#declBairro').value,
+      cidade: $('#declCidade').value,
+      cep: $('#declCep').value,
+      uf: $('#declUf').value,
+      estado: $('#declEstado').value,
+      acs: $('#declAcs').value,
+      area: $('#declArea').value,
+      microarea: $('#declMicroarea').value,
+      logradouroId: logradouroSelecionado.id,
+      data: new Date().toISOString(),
+      id: gerarId()
+    };
+
+    await DB.upsertCidadao(dados);
+    const ok = await DB.criarDeclaracao(dados);
+    if(!ok) return;
+
+    await renderizarDeclaracoes(1);
+    await imprimirDeclaracao(dados);
+
+    $('#formDeclaracao').reset();
+    logradouroSelecionado = null;
+  });
+
+  $('#btnLimparDeclaracao').addEventListener('click', ()=>{
+    $('#formDeclaracao').reset();
+    logradouroSelecionado = null;
+  });
+
+  /* Preenche o nome automaticamente se o CPF já existir na base */
+  $('#declCpf').addEventListener('blur', async ()=>{
+    const cpfLimpo = apenasDigitos($('#declCpf').value);
+    if(cpfLimpo.length < 11) return;
+    const c = await DB.buscarCidadaoPorCpf(cpfLimpo);
+    if(c && !$('#declNome').value) $('#declNome').value = c.nome;
+  });
+
+  /* =====================  Popup de sugestão de nomes já com declaração emitida  ===================== */
+  function preencherCidadaoNoFormulario(c){
+    $('#declNome').value = c.nome;
+    $('#declCpf').value = c.cpf;
+    $('#declNumero').value = c.numero || '';
+    $('#declComplemento').value = c.complemento || '';
+    const l = c.logradouroId ? DB.getLogradouros().find(x=> x.id === c.logradouroId) : null;
+    if(l){
+      selecionarLogradouro(l);
+    } else {
+      logradouroSelecionado = null;
+      $('#declLogradouro').value = c.logradouro || '';
+      $('#declBairro').value = c.bairro || '';
+      $('#declCidade').value = c.cidade || '';
+      $('#declCep').value = c.cep || '';
+      $('#declUf').value = c.uf || '';
+      $('#declEstado').value = c.estado || '';
+      $('#declAcs').value = c.acs || '';
+      $('#declArea').value = c.area || '';
+      $('#declMicroarea').value = c.microarea || '';
+    }
+    $('#popupSugestoesNome').classList.remove('aberta');
+  }
+
+  let sequenciaSugestoesNome = 0;
+  async function renderizarSugestoesNome(filtro){
+    const cont = $('#popupSugestoesNome');
+    const termo = (filtro || '').trim();
+    if(termo.length < 2){
+      cont.classList.remove('aberta');
+      cont.innerHTML = '';
+      return;
+    }
+    const minhaVez = ++sequenciaSugestoesNome;
+    const cidadaos = await DB.buscarCidadaosPorNome(termo, 8);
+    if(minhaVez !== sequenciaSugestoesNome) return; // resposta desatualizada, ignora
+    if(cidadaos.length === 0){
+      cont.classList.remove('aberta');
+      cont.innerHTML = '';
+      return;
+    }
+    cont.innerHTML = cidadaos.map(c=>`
+      <div class="item-sugestao" data-cpf="${c.cpf}">
+        <strong>${c.nome}</strong>
+        <small>${c.cpf}${c.logradouro ? ' — '+c.logradouro+(c.numero?', '+c.numero:'') : ''}</small>
+      </div>
+    `).join('');
+    cont.classList.add('aberta');
+    $$('.item-sugestao', cont).forEach(it=>{
+      it.addEventListener('mousedown', async (e)=>{
+        e.preventDefault(); // evita que o blur feche o popup antes do clique registrar
+        const c = await DB.buscarCidadaoPorCpf(it.dataset.cpf);
+        if(c) preencherCidadaoNoFormulario(c);
+      });
+    });
+  }
+
+  $('#declNome').addEventListener('input', e=> renderizarSugestoesNome(e.target.value));
+  $('#declNome').addEventListener('focus', e=> renderizarSugestoesNome(e.target.value));
+  $('#declNome').addEventListener('blur', ()=>{
+    setTimeout(()=> $('#popupSugestoesNome').classList.remove('aberta'), 150);
+  });
+
+  /* =====================  Paginação genérica  ===================== */
+  function paginar(container, total, pagina, porPagina, aoTrocar){
+    const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
+    container.innerHTML = `
+      <button data-dir="-1" ${pagina<=1?'disabled':''}>‹</button>
+      <span>Página ${pagina} de ${totalPaginas}</span>
+      <button data-dir="1" ${pagina>=totalPaginas?'disabled':''}>›</button>
+    `;
+    $$('button', container).forEach(b=>{
+      b.addEventListener('click', ()=> aoTrocar(pagina + parseInt(b.dataset.dir)));
+    });
+  }
+
+  /* =====================  Histórico de declarações  ===================== */
+  let paginaDeclaracoes = 1;
+  async function renderizarDeclaracoes(pagina){
+    paginaDeclaracoes = pagina;
+    const todas = await DB.getDeclaracoes();
+    const porPagina = 10;
+    const inicio = (pagina-1)*porPagina;
+    const pageItens = todas.slice(inicio, inicio+porPagina);
+    const cont = $('#tabelaDeclaracoes');
+
+    if(todas.length === 0){
+      cont.innerHTML = '<div class="vazio">Nenhuma declaração emitida ainda.</div>';
+      $('#paginacaoDeclaracoes').innerHTML = '';
+      return;
+    }
+
+    cont.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Data</th><th>Nome</th><th>CPF</th><th>Endereço</th><th>ACS</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${pageItens.map(d=>`
+            <tr>
+              <td>${formatarDataHora(d.data)}</td>
+              <td>${d.nome}</td>
+              <td>${d.cpf}</td>
+              <td>${d.logradouro}, ${d.numero}${d.complemento?' - '+d.complemento:''} — ${d.bairro}, ${d.cidade}/${d.uf}</td>
+              <td>${d.acs}</td>
+              <td><button class="btn-texto" data-reimprimir="${d.id}">Reimprimir</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    $$('[data-reimprimir]', cont).forEach(b=>{
+      b.addEventListener('click', async ()=>{
+        const d = await DB.buscarDeclaracaoPorId(b.dataset.reimprimir);
+        if(d) await imprimirDeclaracao(d);
+      });
+    });
+    paginar($('#paginacaoDeclaracoes'), todas.length, pagina, porPagina, renderizarDeclaracoes);
+  }
+
+  /* =====================  Renovação de Receitas  ===================== */
+  let cidadaoReceitaSelecionado = null;
+
+  async function garantirMedicamento(nome){
+    if(!nome) return;
+    if(DB.getMedicamentos().some(m=> m.nome === nome)) return;
+    await DB.criarMedicamento(nome);
+  }
+
+  function renderizarSelectAcsReceita(){
+    const sel = $('#rcAcsSelect');
+    if(!sel) return;
+    const atual = sel.value;
+    const agentes = DB.getAgentes();
+    sel.innerHTML = '<option value="">Selecione um ACS cadastrado</option>' +
+      agentes.map(a=> `<option value="${a.id}">${a.nome} — Área ${a.area}, Microárea ${a.microarea}</option>`).join('');
+    if(agentes.some(a=>a.id === atual)) sel.value = atual;
+  }
+
+  /* Popup de sugestão de nomes de cidadãos já cadastrados */
+  let sequenciaSugestoesRcNome = 0;
+  async function renderizarSugestoesRcNome(filtro){
+    const cont = $('#popupSugestoesRcNome');
+    const termo = (filtro || '').trim();
+    if(termo.length < 2){ cont.classList.remove('aberta'); cont.innerHTML=''; return; }
+    const minhaVez = ++sequenciaSugestoesRcNome;
+    const cidadaos = await DB.buscarCidadaosPorNome(termo, 8);
+    if(minhaVez !== sequenciaSugestoesRcNome) return;
+    if(cidadaos.length === 0){ cont.classList.remove('aberta'); cont.innerHTML=''; return; }
+    cont.innerHTML = cidadaos.map(c=>`
+      <div class="item-sugestao" data-cpf="${c.cpf}" data-nome="${c.nome}">
+        <strong>${c.nome}</strong>
+        <small>${c.cpf}</small>
+      </div>
+    `).join('');
+    cont.classList.add('aberta');
+    $$('.item-sugestao', cont).forEach(it=>{
+      it.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        $('#rcNome').value = it.dataset.nome;
+        $('#rcCpf').value = it.dataset.cpf;
+        cont.classList.remove('aberta');
+        carregarProntuario(it.dataset.cpf, it.dataset.nome);
+      });
+    });
+  }
+  $('#rcNome').addEventListener('input', e=> renderizarSugestoesRcNome(e.target.value));
+  $('#rcNome').addEventListener('focus', e=> renderizarSugestoesRcNome(e.target.value));
+  $('#rcNome').addEventListener('blur', ()=> setTimeout(()=> $('#popupSugestoesRcNome').classList.remove('aberta'), 150));
+
+  /* Ao sair do CPF, localiza o cidadão (se já cadastrado) e carrega o prontuário */
+  $('#rcCpf').addEventListener('blur', async ()=>{
+    const cpfLimpo = apenasDigitos($('#rcCpf').value);
+    if(cpfLimpo.length < 11) return;
+    const c = await DB.buscarCidadaoPorCpf(cpfLimpo);
+    if(c){
+      if(!$('#rcNome').value) $('#rcNome').value = c.nome;
+      await carregarProntuario(c.cpf, c.nome);
+    } else {
+      $('#cartaoProntuario').style.display = 'none';
+      cidadaoReceitaSelecionado = null;
+    }
+  });
+
+  /* Popup de sugestão de medicamentos já cadastrados (usa o cache local) */
+  function renderizarSugestoesMedicamento(filtro){
+    const cont = $('#popupSugestoesMedicamento');
+    const termo = (filtro || '').trim();
+    if(termo.length < 1){ cont.classList.remove('aberta'); cont.innerHTML=''; return; }
+    const medicamentos = DB.getMedicamentos().filter(m=> m.nome && m.nome.toUpperCase().includes(termo.toUpperCase()));
+    if(medicamentos.length === 0){ cont.classList.remove('aberta'); cont.innerHTML=''; return; }
+    cont.innerHTML = medicamentos.slice(0,8).map(m=>`
+      <div class="item-sugestao" data-nome="${m.nome}"><strong>${m.nome}</strong></div>
+    `).join('');
+    cont.classList.add('aberta');
+    $$('.item-sugestao', cont).forEach(it=>{
+      it.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        $('#rcMedicamento').value = it.dataset.nome;
+        cont.classList.remove('aberta');
+      });
+    });
+  }
+  $('#rcMedicamento').addEventListener('input', e=> renderizarSugestoesMedicamento(e.target.value));
+  $('#rcMedicamento').addEventListener('focus', e=> renderizarSugestoesMedicamento(e.target.value));
+  $('#rcMedicamento').addEventListener('blur', ()=> setTimeout(()=> $('#popupSugestoesMedicamento').classList.remove('aberta'), 150));
+
+  /* Prontuário: histórico de renovações do cidadão, agrupado por medicamento, mais recente -> mais antiga */
+  async function carregarProntuario(cpf, nome){
+    cidadaoReceitaSelecionado = { cpf, nome };
+    const registros = await DB.getRenovacoesPorCpf(cpf);
+    const cartao = $('#cartaoProntuario');
+    if(registros.length === 0){
+      cartao.style.display = 'none';
+      return;
+    }
+    $('#prontuarioNome').textContent = nome;
+    const porMedicamento = {};
+    registros.forEach(r=>{
+      if(!porMedicamento[r.medicamento]) porMedicamento[r.medicamento] = [];
+      porMedicamento[r.medicamento].push(r);
+    });
+    const medicamentosOrdenados = Object.keys(porMedicamento).sort();
+    $('#prontuarioConteudo').innerHTML = medicamentosOrdenados.map(med=>{
+      const historico = porMedicamento[med].slice().sort((a,b)=> new Date(b.dataRenovacao) - new Date(a.dataRenovacao));
+      return `
+        <div style="margin-bottom:18px;">
+          <h3 style="font-size:14px;margin:0 0 8px;color:var(--azul-sus-escuro);">${med}</h3>
+          <table>
+            <thead><tr>
+              <th>Data de renovação</th><th>Quantidade</th><th>Dose</th><th>Posologia</th><th>ACS</th>
+            </tr></thead>
+            <tbody>
+              ${historico.map(r=>`
+                <tr>
+                  <td>${formatarData(r.dataRenovacao)}</td>
+                  <td>${r.quantidade}</td>
+                  <td>${r.dose}</td>
+                  <td>${r.posologia}</td>
+                  <td>${r.acsNome || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+    cartao.style.display = '';
+  }
+
+  $('#formReceita').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const nome = $('#rcNome').value.trim();
+    const cpf = $('#rcCpf').value.trim();
+    const acsId = $('#rcAcsSelect').value;
+    const medicamento = $('#rcMedicamento').value.trim();
+    const aviso = $('#avisoReceita');
+
+    if(!acsId){
+      aviso.textContent = 'Selecione um Agente de Saúde cadastrado.';
+      return;
+    }
+    const agente = DB.getAgentes().find(a=> a.id === acsId);
+
+    await DB.garantirCidadaoPorCpf(nome, cpf);
+    await garantirMedicamento(medicamento);
+
+    const registro = {
+      id: gerarId(),
+      nome, cpf,
+      acsId, acsNome: agente ? agente.nome : '',
+      medicamento,
+      quantidade: $('#rcQuantidade').value.trim(),
+      dose: $('#rcDose').value.trim(),
+      posologia: $('#rcPosologia').value.trim(),
+      dataRenovacao: $('#rcData').value,
+      dataRegistro: new Date().toISOString()
+    };
+    const ok = await DB.criarRenovacao(registro);
+    if(!ok) return;
+
+    await renderizarReceitas(1);
+    await carregarProntuario(cpf, nome);
+
+    aviso.textContent = 'Renovação registrada com sucesso.';
+    setTimeout(()=> { if(aviso.textContent === 'Renovação registrada com sucesso.') aviso.textContent = ''; }, 3000);
+
+    // Mantém nome, CPF e ACS preenchidos para facilitar registrar outro medicamento do mesmo cidadão
+    $('#rcMedicamento').value = '';
+    $('#rcQuantidade').value = '';
+    $('#rcDose').value = '';
+    $('#rcPosologia').value = '';
+    $('#rcData').value = new Date().toISOString().slice(0,10);
+    $('#rcMedicamento').focus();
+  });
+
+  $('#btnLimparReceita').addEventListener('click', ()=>{
+    $('#formReceita').reset();
+    $('#rcData').value = new Date().toISOString().slice(0,10);
+    $('#cartaoProntuario').style.display = 'none';
+    cidadaoReceitaSelecionado = null;
+    $('#avisoReceita').textContent = '';
+  });
+
+  let paginaReceitas = 1;
+  async function renderizarReceitas(pagina){
+    paginaReceitas = pagina;
+    const todas = await DB.getRenovacoes(); // já vem ordenado do banco, mais recente primeiro
+    const porPagina = 10;
+    const inicio = (pagina-1)*porPagina;
+    const pageItens = todas.slice(inicio, inicio+porPagina);
+    const cont = $('#tabelaReceitas');
+
+    if(todas.length === 0){
+      cont.innerHTML = '<div class="vazio">Nenhuma renovação de receita registrada ainda.</div>';
+      $('#paginacaoReceitas').innerHTML = '';
+      return;
+    }
+
+    cont.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Data de renovação</th><th>Nome</th><th>CPF</th><th>Medicamento</th><th>Quantidade</th><th>Dose</th><th>Posologia</th><th>ACS</th>
+        </tr></thead>
+        <tbody>
+          ${pageItens.map(r=>`
+            <tr>
+              <td>${formatarData(r.dataRenovacao)}</td>
+              <td>${r.nome}</td>
+              <td>${r.cpf}</td>
+              <td>${r.medicamento}</td>
+              <td>${r.quantidade}</td>
+              <td>${r.dose}</td>
+              <td>${r.posologia}</td>
+              <td>${r.acsNome || '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    paginar($('#paginacaoReceitas'), todas.length, pagina, porPagina, renderizarReceitas);
+  }
+
+  /* =====================  Configurações da unidade  ===================== */
+  let assinaturaTemporaria = null;
+
+  function renderizarAssinatura(dataUrl){
+    const cont = $('#assinaturaPreview');
+    if(dataUrl){
+      cont.innerHTML = `<img src="${dataUrl}" alt="Assinatura digital do responsável técnico">`;
+    } else {
+      cont.innerHTML = '<span class="vazio-assinatura">Nenhuma assinatura cadastrada ainda.</span>';
+    }
+  }
+
+  async function carregarConfiguracao(){
+    const cfg = await DB.getConfiguracao();
+    if(!cfg) return;
+    $('#cfgNomeUnidade').value = cfg.nomeUnidade || '';
+    $('#cfgCnes').value = cfg.cnes || '';
+    $('#cfgLogradouro').value = cfg.logradouro || '';
+    $('#cfgNumero').value = cfg.numero || '';
+    $('#cfgComplemento').value = cfg.complemento || '';
+    $('#cfgBairro').value = cfg.bairro || '';
+    $('#cfgCidade').value = cfg.cidade || '';
+    $('#cfgUf').value = cfg.uf || '';
+    $('#cfgResponsavel').value = cfg.responsavel || '';
+    $('#cfgRegistro').value = cfg.registro || '';
+    renderizarAssinatura(cfg.assinatura || null);
+  }
+
+  $('#cfgAssinatura').addEventListener('change', e=>{
+    const arquivo = e.target.files[0];
+    if(!arquivo) return;
+    const leitor = new FileReader();
+    leitor.onload = ev=>{
+      assinaturaTemporaria = ev.target.result;
+      renderizarAssinatura(assinaturaTemporaria);
+    };
+    leitor.readAsDataURL(arquivo);
+  });
+
+  $('#btnRemoverAssinatura').addEventListener('click', ()=>{
+    assinaturaTemporaria = '';
+    $('#cfgAssinatura').value = '';
+    renderizarAssinatura(null);
+  });
+
+  $('#formConfiguracao').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const cfgAnterior = (await DB.getConfiguracao()) || {};
+    const assinaturaFinal = (assinaturaTemporaria !== null) ? assinaturaTemporaria : (cfgAnterior.assinatura || '');
+    const cfg = {
+      nomeUnidade: $('#cfgNomeUnidade').value.trim(),
+      cnes: $('#cfgCnes').value.trim(),
+      logradouro: $('#cfgLogradouro').value.trim(),
+      numero: $('#cfgNumero').value.trim(),
+      complemento: $('#cfgComplemento').value.trim(),
+      bairro: $('#cfgBairro').value.trim(),
+      cidade: $('#cfgCidade').value.trim(),
+      uf: $('#cfgUf').value.trim().toUpperCase(),
+      responsavel: $('#cfgResponsavel').value.trim(),
+      registro: $('#cfgRegistro').value.trim(),
+      assinatura: assinaturaFinal
+    };
+    const ok = await DB.salvarConfiguracao(cfg);
+    if(!ok) return;
+    assinaturaTemporaria = null;
+    const aviso = $('#avisoConfiguracao');
+    aviso.textContent = 'Configuração salva com sucesso.';
+    setTimeout(()=> aviso.textContent = '', 3000);
+  });
+
+  /* =====================  Inicialização  ===================== */
+  // Campos de nome (pessoa/unidade): maiúsculo, sem acentos/especiais, sem números
+  aplicarSanitizacao($('#declNome'), false);
+  aplicarSanitizacao($('#cfgNomeUnidade'), false);
+  aplicarSanitizacao($('#cfgResponsavel'), false);
+  aplicarSanitizacao($('#agenteNome'), false);
+  aplicarSanitizacao($('#rcNome'), false);
+  // Nome do logradouro, cidade, bairro e complemento: maiúsculo, sem acentos/especiais, números permitidos
+  aplicarSanitizacao($('#novoLogradouro'), true);
+  aplicarSanitizacao($('#novoCidade'), true);
+  aplicarSanitizacao($('#novoBairro'), true);
+  aplicarSanitizacao($('#cfgLogradouro'), true);
+  aplicarSanitizacao($('#cfgCidade'), true);
+  aplicarSanitizacao($('#cfgBairro'), true);
+  aplicarSanitizacao($('#declComplemento'), true);
+  aplicarSanitizacao($('#cfgComplemento'), true);
+  // Nome do medicamento: maiúsculo, sem acentos/especiais, números permitidos (ex.: dosagens no nome)
+  aplicarSanitizacao($('#rcMedicamento'), true);
+
+  await DB.carregarCaches();
+  await carregarConfiguracao();
+  travarCidadeUf(); // garante Cidade=SANTA RITA e UF=PB mesmo se a configuração salva tiver outros valores
+  await renderizarDeclaracoes(1);
+  renderizarAgentes();
+  renderizarSelectAgentes();
+  await renderizarReceitas(1);
+  renderizarSelectAcsReceita();
+  $('#rcData').value = new Date().toISOString().slice(0,10);
+
+})();
+</script>
+
+</body>
+</html>
