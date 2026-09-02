@@ -125,6 +125,14 @@ alter table public.medicamentos enable row level security;
 alter table public.renovacoes   enable row level security;
 alter table public.configuracao enable row level security;
 
+drop policy if exists "acesso_autenticado" on public.agentes;
+drop policy if exists "acesso_autenticado" on public.logradouros;
+drop policy if exists "acesso_autenticado" on public.cidadaos;
+drop policy if exists "acesso_autenticado" on public.declaracoes;
+drop policy if exists "acesso_autenticado" on public.medicamentos;
+drop policy if exists "acesso_autenticado" on public.renovacoes;
+drop policy if exists "acesso_autenticado" on public.configuracao;
+
 create policy "acesso_autenticado" on public.agentes      for all to authenticated using (true) with check (true);
 create policy "acesso_autenticado" on public.logradouros  for all to authenticated using (true) with check (true);
 create policy "acesso_autenticado" on public.cidadaos     for all to authenticated using (true) with check (true);

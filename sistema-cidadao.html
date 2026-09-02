@@ -79,6 +79,30 @@
   }
   section.aba{display:none;}
   section.aba.ativa{display:block;}
+  nav.subabas{
+    display:flex;
+    gap:4px;
+    flex-wrap:wrap;
+    border-bottom:1px solid var(--azul-borda);
+    margin-bottom:20px;
+  }
+  nav.subabas button{
+    background:none;
+    border:none;
+    padding:9px 14px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--texto-suave);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    margin-bottom:-1px;
+  }
+  nav.subabas button.ativa{
+    color:var(--azul-sus);
+    border-bottom-color:var(--azul-sus);
+  }
+  .subaba{display:none;}
+  .subaba.ativa{display:block;}
   .cartao{
     background:var(--branco);
     border:1px solid var(--azul-borda);
@@ -501,6 +525,14 @@
   <!-- ===================== ABA: CONFIGURAÇÕES ===================== -->
   <section class="aba" id="aba-configuracoes">
 
+    <nav class="subabas">
+      <button class="subaba-botao ativa" data-subaba="unidade">Dados da unidade</button>
+      <button class="subaba-botao" data-subaba="acs">Agentes Comunitários de Saúde (ACS)</button>
+      <button class="subaba-botao" data-subaba="enderecos">Endereços cadastrados</button>
+      <button class="subaba-botao" data-subaba="cidadaos">Cidadãos cadastrados</button>
+    </nav>
+
+    <div class="subaba ativa" id="subaba-unidade">
     <div class="cartao">
       <h2>Dados da unidade</h2>
       <form id="formConfiguracao" autocomplete="off">
@@ -565,7 +597,9 @@
       </form>
       <p class="aviso" id="avisoConfiguracao"></p>
     </div>
+    </div>
 
+    <div class="subaba" id="subaba-acs">
     <div class="cartao">
       <h2>Agentes Comunitários de Saúde (ACS)</h2>
       <form id="formAgente" autocomplete="off">
@@ -591,7 +625,9 @@
       <div class="lista-agentes" id="listaAgentes"></div>
       <p class="aviso">Os ACS cadastrados aqui ficam disponíveis para seleção ao cadastrar um logradouro na Declaração de Residência.</p>
     </div>
+    </div>
 
+    <div class="subaba" id="subaba-enderecos">
     <div class="cartao">
       <h2>Endereços cadastrados</h2>
       <form id="formEndereco" autocomplete="off">
@@ -627,12 +663,15 @@
       <div class="lista-agentes" id="listaEnderecos"></div>
       <p class="aviso">Nenhum ACS na lista? Cadastre-o antes no bloco acima. Os endereços cadastrados aqui ficam disponíveis para seleção ao emitir uma Declaração de Residência.</p>
     </div>
+    </div>
 
+    <div class="subaba" id="subaba-cidadaos">
     <div class="cartao">
       <h2>Cidadãos cadastrados</h2>
       <input type="text" id="buscaCidadaoConfig" placeholder="Buscar por nome ou CPF...">
       <div id="tabelaCidadaosConfig"></div>
       <div class="paginacao" id="paginacaoCidadaosConfig"></div>
+    </div>
     </div>
 
   </section>
@@ -1034,6 +1073,16 @@
   if(btnAtalhoConfiguracoes){
     btnAtalhoConfiguracoes.addEventListener('click', ()=> irParaAba('configuracoes'));
   }
+
+  /* =====================  Sub-abas de Configurações  ===================== */
+  function irParaSubaba(nomeSubaba){
+    $$('.subaba-botao').forEach(b=> b.classList.toggle('ativa', b.dataset.subaba === nomeSubaba));
+    $$('.subaba').forEach(s=> s.classList.remove('ativa'));
+    $('#subaba-'+nomeSubaba).classList.add('ativa');
+  }
+  $$('.subaba-botao').forEach(btn=>{
+    btn.addEventListener('click', ()=> irParaSubaba(btn.dataset.subaba));
+  });
 
   /* =====================  Modais  ===================== */
   function abrirModal(id){ $('#'+id).classList.add('aberta'); }
